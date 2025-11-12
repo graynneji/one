@@ -4,9 +4,10 @@ import TherapistBioModal from '@/components/TherapistBioModal';
 import WelcomeTip from '@/components/WelcomeTipModal';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
-import { useAllUnreadCount } from '@/hooks/useAllUnreadCount';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCrudCreate, useMarkMessagesRead } from '@/hooks/useCrud';
 import { useMessage } from '@/hooks/useMessage';
+import { useTotalUnreadCount } from '@/hooks/useMsg';
 import { sendMessage } from '@/types';
 import { capitalizeFirstLetter, formatDate, formatDateTime, formatTime, isToday } from '@/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +25,6 @@ import {
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    useColorScheme,
     View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -130,7 +130,7 @@ const ChatScreen = ({ therapist, senderId, receiverId }: ChatScreenProps) => {
         },
     )
 
-    const { unreadAllCount } = useAllUnreadCount({
+    const { totalUnreadCount } = useTotalUnreadCount({
         table: 'messages',
         senderId: session?.user?.id ?? '',
         enabled: !!session?.user?.id,
@@ -215,9 +215,9 @@ const ChatScreen = ({ therapist, senderId, receiverId }: ChatScreenProps) => {
                 reciever_id: receiverId,
             })
                 .then((response) => {
-                    // setOptimisticMessages(prev =>
-                    //     prev.filter(msg => msg.id !== tempId)
-                    // );
+                    setOptimisticMessages(prev =>
+                        prev.filter(msg => msg.id !== tempId)
+                    );
                 })
                 .catch((error) => {
                     setOptimisticMessages(prev =>
@@ -317,12 +317,12 @@ const ChatScreen = ({ therapist, senderId, receiverId }: ChatScreenProps) => {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 {!therapist && (
                     <TouchableOpacity activeOpacity={0.7} onPress={() => router.back()} style={styles.unreadCount}>
                         <Ionicons name="chevron-back-outline" size={24} color={colors.text} />
-                        {<Text style={styles.unreadCountText}>{unreadAllCount ? unreadAllCount : null}</Text>}
+                        {<Text style={styles.unreadCountText}>{totalUnreadCount ? totalUnreadCount : null}</Text>}
                     </TouchableOpacity>
                 )}
 
@@ -450,7 +450,7 @@ const ChatScreen = ({ therapist, senderId, receiverId }: ChatScreenProps) => {
 
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAvoidingView
-                    behavior={Platform.OS === "ios" ? 'padding' : 'height'}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
                     <View style={styles.inputContainer}>
                         <TextInput

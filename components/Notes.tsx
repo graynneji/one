@@ -1,9 +1,10 @@
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useGetById } from "@/hooks/useCrud";
 import { NOTE_TYPES, PatientNote } from "@/types";
 import { formatDateTime } from "@/utils";
 import React, { Fragment } from "react";
-import { StyleSheet, Text, TouchableOpacity, useColorScheme, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 // import { NOTE_TYPES, PatientNote } from "./TherapistDashboard";
 interface Note {
     notes: []

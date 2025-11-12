@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCrudCreate } from '@/hooks/useCrud';
 import { getErrorMessage } from '@/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +23,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    useColorScheme,
     View,
 } from 'react-native';
 import Toast from 'react-native-toast-message';

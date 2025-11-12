@@ -2,6 +2,7 @@ import Avatar from '@/components/Avatar';
 import ImageViewer from '@/components/ImageViewer';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCrudCreate, useGetById } from '@/hooks/useCrud';
 import { capitalizeFirstLetter, formatDateTime } from '@/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +18,6 @@ import {
     TextInput,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    useColorScheme,
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -79,6 +79,7 @@ const DiscussionView: React.FC<DiscussionViewProps> = ({ }) => {
     const router = useRouter()
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+    console.log(colorScheme, 'colors, colors, coloes')
     const styles = createStyles(colors);
     const createCommentMutation = useCrudCreate("article_comments", [["article_comments"], ["article"]])
     const { data, isLoading, error } = useGetById("article_comments", { article_id: discussion?.id }, "*", !!discussion?.id, {})
@@ -156,7 +157,7 @@ const DiscussionView: React.FC<DiscussionViewProps> = ({ }) => {
 
     const handleAddComment = async (): Promise<void> => {
         setIsSending(true)
-        // Keyboard.dismiss()
+        Keyboard.dismiss()
         if (newComment.trim()) {
             const comment = {
                 content: newComment,
@@ -175,7 +176,7 @@ const DiscussionView: React.FC<DiscussionViewProps> = ({ }) => {
             }
         }
     };
-    console.log(isSending, 'sending')
+
     const renderComment = (comment: Comment) => (
         <View key={comment.id} style={styles.commentCard}>
             <View style={styles.commentContent}>
@@ -304,7 +305,6 @@ const DiscussionView: React.FC<DiscussionViewProps> = ({ }) => {
             {/* Comment Input */}
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <KeyboardAvoidingView
-                    // style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
                     <View style={styles.commentInputContainer}>

@@ -1,14 +1,17 @@
 import Avatar from '@/components/Avatar';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/DarkLightModeContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUpdate } from '@/hooks/useCrud';
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
 import { Buffer } from 'buffer';
 import Constants from "expo-constants";
-import * as FileSystem from "expo-file-system/legacy";
-import * as ImagePicker from "expo-image-picker";
+import { EncodingType, getInfoAsync, readAsStringAsync } from "expo-file-system/legacy";
+import { launchImageLibraryAsync, requestMediaLibraryPermissionsAsync } from "expo-image-picker";
+
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -19,7 +22,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    useColorScheme,
     View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -83,7 +85,13 @@ const Settings: React.FC = () => {
     const updateCrudAuthMutaion = useUpdate("auth")
     const updateCrudUserMutaion = useUpdate("user")
     const updateCrudPatientOrTherapistMutaion = useUpdate(patientTherapist?.table)
-    const [isSaving, setIsSaving] = useState<boolean>(false)
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const { isDark, themeMode, setThemeMode } = useTheme();
+
+    // Toggle dark mode
+    const toggleTheme = () => {
+        setThemeMode(isDark ? 'light' : 'dark');
+    };
 
     const { loading, logout } = useAuth()
 
@@ -95,29 +103,32 @@ const Settings: React.FC = () => {
         setIsEditing(!isEditing);
     };
 
-    const pickSingleImage = async (maxSizeMB: number = 2): Promise<PickedImage | null> => {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const pickSingleImage = async (maxSizeKB: number = 200): Promise<PickedImage | null> => {
+        const { status } = await requestMediaLibraryPermissionsAsync();
         if (status !== "granted") {
             Alert.alert("Permission Denied", "We need access to your photo library to select your profile picture.");
             return null;
         }
 
-        const result = await ImagePicker.launchImageLibraryAsync({
+        const result = await launchImageLibraryAsync({
             mediaTypes: ["images"],
-            allowsEditing: true, // crop/resize
-            aspect: [1, 1], // perfect for profile pictures
+            allowsEditing: false,
+            aspect: [1, 1],
             quality: 1,
         });
 
         if (result.canceled || !result.assets?.[0]) return null;
 
         const asset = result.assets[0];
-        const maxSize = 200 * 1024;
+        const maxSizeBytes = maxSizeKB * 1024; // 🔥 Fixed: KB to bytes
 
-        if (asset.fileSize && asset.fileSize > maxSize) {
+        const fileInfo = await getInfoAsync(asset.uri);
+        const fileSize = (fileInfo.exists && 'size' in fileInfo ? fileInfo.size : null) ?? asset.fileSize ?? 0;
+
+        if (fileSize > maxSizeBytes) {
             Alert.alert(
                 "Image Too Large",
-                `The selected image exceeds ${maxSizeMB}KB.\nPlease choose a smaller one.`
+                `The selected image is ${(fileSize / 1024).toFixed(0)}KB.\nPlease choose one smaller than ${maxSizeKB}KB.`
             );
             return null;
         }
@@ -125,7 +136,7 @@ const Settings: React.FC = () => {
         return {
             uri: asset.uri,
             fileName: asset.fileName ?? undefined,
-            fileSize: asset.fileSize,
+            fileSize: fileSize, // 🔥 Return actual file size
             mimeType: asset.mimeType,
         };
     };
@@ -155,8 +166,8 @@ const Settings: React.FC = () => {
             // Upload new image if it's a local URI (not already hosted)
             if (user.profile_picture && user.profile_picture.startsWith("file://")) {
                 const imageName = `${session?.user?.id}-${Date.now()}.jpg`;
-                const base64 = await FileSystem.readAsStringAsync(user.profile_picture, {
-                    encoding: FileSystem.EncodingType.Base64,
+                const base64 = await readAsStringAsync(user.profile_picture, {
+                    encoding: EncodingType.Base64,
                 });
 
                 const arrayBuffer = Buffer.from(base64, 'base64');
@@ -202,6 +213,7 @@ const Settings: React.FC = () => {
                 text1: "Profile updated!",
                 text2: "Your profile was successfully updated",
             });
+            useCheckAuth()
         } catch (err) {
             Toast.show({
                 type: "error",
@@ -493,9 +505,10 @@ const Settings: React.FC = () => {
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Profile</Text>
+                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={24} color={isDark ? 'white' : 'black'} onPress={toggleTheme} />
             </View>
 
             {/* Tab Bar */}
@@ -544,6 +557,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     header: {
         paddingHorizontal: 16,
         paddingVertical: 12,
+        justifyContent: 'space-between',
+        flexDirection: 'row'
     },
     headerTitle: {
         fontSize: 24,

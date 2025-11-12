@@ -1,7 +1,8 @@
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { NOTE_TYPES, PatientNote } from "@/types";
 import React, { Dispatch, SetStateAction } from "react";
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export interface noteFormProps {

@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import React, { useLayoutEffect, useState } from 'react';
-import { Image, ImageStyle, StyleSheet, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Image, ImageStyle, StyleSheet, TouchableOpacity, View } from 'react-native';
 import ImageViewerModal from './ImageViewerModal';
 
 interface ImageViewerProps {

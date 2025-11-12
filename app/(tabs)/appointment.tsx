@@ -1,5 +1,6 @@
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCrudCreate, useGetById, useRpc } from '@/hooks/useCrud';
 import { sendMessage } from '@/types';
 import { capitalizeFirstLetter, formatDate, formatDateTime } from '@/utils';
@@ -16,7 +17,6 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    useColorScheme,
     View,
 } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';

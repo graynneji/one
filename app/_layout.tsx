@@ -1,149 +1,20 @@
-
-// import ErrorBoundary from '@/components/ErrorBoundary';
-// import { Colors } from '@/constants/Colors';
-// import { AuthProvider } from '@/context/AuthContext';
-// import { PatientIdProvider } from '@/context/patientIdContext';
-// import { PatientInfoProvider } from '@/context/patientInfoContext';
-// import { queryClient } from '@/utils/queryClient';
-// import { Theme, ThemeProvider } from '@react-navigation/native';
-// import { QueryClientProvider } from '@tanstack/react-query';
-// import { useFonts } from 'expo-font';
-// import { Stack } from 'expo-router';
-// import * as SplashScreen from 'expo-splash-screen';
-// import { StatusBar } from 'expo-status-bar';
-// import React, { useEffect } from 'react';
-// import { useColorScheme } from 'react-native';
-// import 'react-native-reanimated';
-// import Toast from 'react-native-toast-message';
-
-// SplashScreen.preventAutoHideAsync();
-
-// // Custom Light Theme using your Colors.ts
-// const CustomLightTheme: Theme = {
-//   dark: false,
-//   colors: {
-//     primary: Colors.light.primary,
-//     background: Colors.light.background,
-//     card: Colors.light.surface,
-//     text: Colors.light.text,
-//     border: Colors.light.border,
-//     notification: Colors.light.primary,
-//   },
-//   fonts: {
-//     regular: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     },
-//     medium: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     },
-//     bold: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     },
-//     heavy: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     }
-//   }
-// };
-
-// // Custom Dark Theme using your Colors.ts
-// const CustomDarkTheme: Theme = {
-//   dark: true,
-//   colors: {
-//     primary: Colors.dark.primary,
-//     background: Colors.dark.background,
-//     card: Colors.dark.surface,
-//     text: Colors.dark.text,
-//     border: Colors.dark.border,
-//     notification: Colors.dark.primary,
-//   },
-//   fonts: {
-//     regular: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     },
-//     medium: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     },
-//     bold: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     },
-//     heavy: {
-//       fontFamily: '',
-//       fontWeight: 'bold'
-//     }
-//   }
-// };
-
-// export default function RootLayout() {
-//   const colorScheme = useColorScheme();
-
-//   const [loaded] = useFonts({
-//     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-//   });
-
-//   useEffect(() => {
-//     if (loaded) {
-//       SplashScreen.hideAsync();
-//     }
-//   }, [loaded]);
-
-//   if (!loaded) {
-//     return null;
-//   }
-
-//   return (
-//     <AuthProvider>
-//       <PatientIdProvider>
-//         <PatientInfoProvider>
-//           <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-//             <QueryClientProvider client={queryClient}>
-//               <ErrorBoundary>
-//                 <Stack screenOptions={{
-//                   headerShown: false,
-//                   animation: 'slide_from_right',
-//                   animationTypeForReplace: 'push',
-//                 }}>
-//                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-//                   <Stack.Screen name="+not-found" />
-//                   <Stack.Screen
-//                     name="index"
-//                     options={{
-//                       headerShown: false,
-//                       headerShadowVisible: false,
-//                     }}
-//                   />
-//                 </Stack>
-//               </ErrorBoundary>
-//             </QueryClientProvider>
-//             <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-//             <Toast />
-//           </ThemeProvider>
-//         </PatientInfoProvider>
-//       </PatientIdProvider>
-//     </AuthProvider>
-//   );
-// }
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Colors } from '@/constants/Colors';
 import { AudioProvider } from '@/context/AudioContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { DarkLightModeContextProvider } from '@/context/DarkLightModeContext';
 import { PatientIdProvider } from '@/context/patientIdContext';
 import { PatientInfoProvider } from '@/context/patientInfoContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { queryClient } from '@/utils/queryClient';
 import { Theme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
+import * as Font from 'expo-font';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 import 'react-native-reanimated';
 import Toast from 'react-native-toast-message';
 
@@ -162,19 +33,19 @@ const CustomLightTheme: Theme = {
   },
   fonts: {
     regular: {
-      fontFamily: 'Inter-Regular',
+      fontFamily: 'InterRegular',
       fontWeight: '400'
     },
     medium: {
-      fontFamily: 'Inter-Medium',
+      fontFamily: 'InterMedium',
       fontWeight: '500'
     },
     bold: {
-      fontFamily: 'Poppins-SemiBold',
+      fontFamily: 'PoppinsSemiBold',
       fontWeight: '600'
     },
     heavy: {
-      fontFamily: 'Poppins-Bold',
+      fontFamily: 'PoppinsBold',
       fontWeight: '700'
     }
   }
@@ -193,19 +64,19 @@ const CustomDarkTheme: Theme = {
   },
   fonts: {
     regular: {
-      fontFamily: 'Inter-Regular',
+      fontFamily: 'InterRegular',
       fontWeight: '400'
     },
     medium: {
-      fontFamily: 'Inter-Medium',
+      fontFamily: 'InterMedium',
       fontWeight: '500'
     },
     bold: {
-      fontFamily: 'Poppins-SemiBold',
+      fontFamily: 'PoppinsSemiBold',
       fontWeight: '600'
     },
     heavy: {
-      fontFamily: 'Poppins-Bold',
+      fontFamily: 'PoppinsBold',
       fontWeight: '700'
     }
   }
@@ -214,7 +85,7 @@ const CustomDarkTheme: Theme = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  const [loaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     // Inter for body text (clean, readable, professional)
     'Inter-Regular': require('../assets/fonts/Inter/Inter-Regular.ttf'),
     'Inter-Medium': require('../assets/fonts/Inter/Inter-Medium.ttf'),
@@ -237,47 +108,52 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (loaded) {
+    if (fontError) {
+      console.error('Font loading error:', fontError);
+    }
+  }, [fontError]);
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      const loadedFonts = Font.getLoadedFonts();
+      console.log('Font loaded successfully', loadedFonts)
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontsLoaded]);
 
-  if (!loaded) {
+
+  // Don't render anything until fonts are loaded
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
   return (
-
-    <AuthProvider>
-      <AudioProvider>
-        <PatientIdProvider>
-          <PatientInfoProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-              <QueryClientProvider client={queryClient}>
-                <ErrorBoundary>
-                  <Stack screenOptions={{
-                    headerShown: false,
-                    animation: 'slide_from_right',
-                    animationTypeForReplace: 'push',
-                  }}>
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="+not-found" />
-                    <Stack.Screen
-                      name="index"
-                      options={{
-                        headerShown: false,
-                        headerShadowVisible: false,
-                      }}
-                    />
-                  </Stack>
-                </ErrorBoundary>
-              </QueryClientProvider>
-              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-              <Toast />
-            </ThemeProvider>
-          </PatientInfoProvider>
-        </PatientIdProvider>
-      </AudioProvider>
-    </AuthProvider>
+    <DarkLightModeContextProvider>
+      <AuthProvider>
+        <AudioProvider>
+          <PatientIdProvider>
+            <PatientInfoProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+                <QueryClientProvider client={queryClient}>
+                  <ErrorBoundary>
+                    <Stack screenOptions={{
+                      headerShown: false,
+                      animation: 'slide_from_right',
+                      animationTypeForReplace: 'push',
+                    }}>
+                      <Stack.Screen name="index" options={{ headerShown: false }} />
+                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                      <Stack.Screen name="+not-found" />
+                    </Stack>
+                  </ErrorBoundary>
+                </QueryClientProvider>
+                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+                <Toast />
+              </ThemeProvider>
+            </PatientInfoProvider>
+          </PatientIdProvider>
+        </AudioProvider>
+      </AuthProvider>
+    </DarkLightModeContextProvider>
   );
 }

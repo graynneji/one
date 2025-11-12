@@ -256,7 +256,7 @@ create index if not exists idx_article_category on public.article(category_id);
 create index if not exists idx_article_created on public.article(created_at desc);
 create index if not exists idx_article_views on public.article(views desc);
 create index if not exists idx_article_urgent on public.article(is_urgent) where is_urgent = true;
-create index if not exists idx_article_tags on public.article using gin(tags);
+create index if not exists idx_article_tags on public.article(tags);
 
 -- Article comments indexes
 create index if not exists idx_comments_article on public.article_comments(article_id);
@@ -290,6 +290,7 @@ alter table public.therapist enable row level security;
 alter table public.patients enable row level security;
 alter table public.patient_notes enable row level security;
 alter table public.messages enable row level security;
+alter table public.categories_article enable row level security;
 alter table public.article enable row level security;
 alter table public.article_comments enable row level security;
 alter table public.article_likes enable row level security;
@@ -330,17 +331,14 @@ create policy "therapist_delete" on public.therapist
 -- ===============================
 -- PATIENTS POLICIES (with insert enabled)
 -- ===============================
-create policy "select_for_all" on public.patients 
-  for select to public using (true);
-
 create policy "patients_select" on public.patients 
   for select to authenticated using (true);
 
 create policy "patients_insert" on public.patients 
   for insert to authenticated with check (true);
 
-create policy "patients_update" on public.patients 
-  for update to authenticated using (true) with check (true);
+create policy "patients_update_for_all" on public.patients 
+  for update to public using (true) with check (true);
 
 create policy "patients_delete" on public.patients 
   for delete to authenticated using (true);
@@ -380,17 +378,24 @@ create policy "messages_delete" on public.messages
   for delete to authenticated 
   using (auth.uid() = sender_id or auth.uid() = reciever_id);
 
+
+-- ===============================
+-- CATEGORIES ARTICLE POLICIES
+-- ===============================
+create policy "select_for_all" on public.categories_article 
+  for select to public using (true);
+
 -- ===============================
 -- ARTICLE POLICIES
 -- ===============================
-create policy "article_select" on public.article 
+create policy "article_select_for_all" on public.article 
   for select to public using (true);
 
 create policy "article_insert" on public.article 
   for insert to authenticated with check (true);
 
-create policy "article_update" on public.article 
-  for update to authenticated using (true) with check (true);
+create policy "article_update_for_all" on public.article 
+  for update to public using (true) with check (true);
 
 create policy "article_delete" on public.article 
   for delete to authenticated using (true);
@@ -548,14 +553,14 @@ begin
 
   return new_views;
 end;
-$function$
+$function$;
 
 -- ===============================
 -- FUNCTION: increment_views_bigint - session_count column in patients
 -- ===============================
 CREATE OR REPLACE FUNCTION public.increment_patient_session(p_patient_id uuid)
-RETURNS bigint
-LANGUAGE plpgsql
+ RETURNS bigint
+ LANGUAGE plpgsql
 AS $function$
 DECLARE
   new_session_count bigint;

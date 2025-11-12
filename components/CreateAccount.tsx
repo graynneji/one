@@ -1,6 +1,7 @@
 import { CrudAdapter } from '@/adapter/crudAdapter';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCrudCreate } from '@/hooks/useCrud';
 import { signUpschema } from '@/lib/validationSchema';
 import { CrudService } from '@/services/crudService';
@@ -9,7 +10,7 @@ import { Client } from '@/utils/client';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRouter } from "expo-router";
 import React, { useEffect, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, useColorScheme, View } from 'react-native';
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from 'react-native-toast-message';
 
@@ -162,24 +163,25 @@ const CreateAccount: React.FC<QuestionAireAnswersProps> = ({ answers }) => {
                 });
                 return
             }
-            Alert.alert(
-                'Success',
-                'Account created successfully! Please check your email for verification.',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            // Navigate to sign in or verification screen
-                            router.replace({
-                                pathname: '/auth/verify-email-screen',
-                                params: {
-                                    email: formData?.email
-                                }
-                            });
-                        }
-                    }
-                ]
-            );
+            router.replace('/(tabs)/session/chat')
+            // Navigate to verification screen. if you want to verify email uncomment this code
+            // Alert.alert(
+            //     'Success',
+            //     'Account created successfully! Please check your email for verification.',
+            //     [
+            //         {
+            //             text: 'OK',
+            //             onPress: () => {
+            //                 router.replace({
+            //                     pathname: '/auth/verify-email-screen',
+            //                     params: {
+            //                         email: formData?.email
+            //                     }
+            //                 });
+            //             }
+            //         }
+            //     ]
+            // );
         } catch (error) {
 
             Alert.alert('Error', `Failed to create account. Please try again. ${error}`);

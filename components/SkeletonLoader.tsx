@@ -1,18 +1,44 @@
+import { useCheckAuth } from '@/context/AuthContext'; // Adjust path as needed
+import { useColorScheme } from '@/hooks/useColorScheme';
 import React from 'react';
 import {
     Animated,
     Dimensions,
     StyleSheet,
-    Text,
     View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getColors } from '../constants/Colors'; // Adjust path as needed
+
 const { width } = Dimensions.get('window');
 
-// Skeleton loading component
-const SkeletonLoader: React.FC = () => {
+interface SkeletonLoaderProps {
+    variant?: 'contacts' | 'chats' | 'auto';
+    itemCount?: number;
+    showHeader?: boolean;
+}
+
+// Main Skeleton Loader Component
+const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({
+    variant = 'auto',
+    itemCount = 8,
+    showHeader = true,
+}) => {
+    const { session } = useCheckAuth();
+    const colorScheme = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const colors = getColors(isDark);
+
     const shimmerValue = React.useRef(new Animated.Value(0)).current;
     const fadeValue = React.useRef(new Animated.Value(0)).current;
+
+    // Auto-detect variant based on user designation
+    const effectiveVariant = React.useMemo(() => {
+        if (variant !== 'auto') return variant;
+
+        const designation = session?.user?.user_metadata?.designation;
+        return designation === 'therapist' ? 'chats' : 'contacts';
+    }, [variant, session]);
 
     React.useEffect(() => {
         // Fade in animation
@@ -43,324 +69,444 @@ const SkeletonLoader: React.FC = () => {
         outputRange: [-width, width],
     });
 
+    const skeletonStyles = getSkeletonStyles(colors, isDark);
+
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <SafeAreaView
+            style={[styles.container, { backgroundColor: colors.background }]}
+            edges={['top', 'bottom', 'left', 'right']}
+        >
             <Animated.View
                 style={[
                     styles.content,
                     { opacity: fadeValue }
                 ]}
             >
-                {/* Header Skeleton */}
-                <View style={styles.headerSkeleton}>
-                    <View style={styles.skeletonItem}>
-                        {/* <View style={styles.skeletonAvatar} /> */}
-                        <Animated.View
-                            style={[
-                                styles.shimmer,
-                                {
-                                    transform: [{ translateX }],
-                                },
-                            ]}
-                        />
-                    </View>
-                    <View style={[styles.skeletonItem, styles.skeletonTitle]}>
-                        <View style={styles.skeletonLine} />
-                        <Animated.View
-                            style={[
-                                styles.shimmer,
-                                {
-                                    transform: [{ translateX }],
-                                },
-                            ]}
-                        />
-                    </View>
-                    <View style={[styles.skeletonItem, styles.skeletonSubtitle]}>
-                        <View style={styles.skeletonLineSmall} />
-                        <Animated.View
-                            style={[
-                                styles.shimmer,
-                                {
-                                    transform: [{ translateX }],
-                                },
-                            ]}
-                        />
-                    </View>
-                </View>
+                {/* Header with Search Bar */}
+                {showHeader && (
+                    <View style={styles.headerSection}>
+                        {/* Logo */}
+                        <View style={[styles.skeletonItem, styles.logoSkeleton]}>
+                            <View style={[
+                                styles.skeletonLine,
+                                skeletonStyles.skeletonBase,
+                                { width: '45%', height: 32, borderRadius: 8 }
+                            ]} />
+                            <Animated.View
+                                style={[
+                                    styles.shimmer,
+                                    skeletonStyles.shimmer,
+                                    { transform: [{ translateX }] },
+                                ]}
+                            />
+                        </View>
 
-                {/* Content Cards Skeleton */}
-                <View style={styles.cardsSkeleton}>
-                    {[...Array(3)].map((_, index) => (
-                        <View key={index} style={styles.skeletonCard}>
-                            <View style={styles.cardHeader}>
-                                <View style={[styles.skeletonItem, styles.cardTitle]}>
-                                    <View style={styles.skeletonLine} />
+                        {/* User Header Section */}
+                        <View style={styles.userHeader}>
+                            <View style={styles.userHeaderLeft}>
+                                <View style={[styles.skeletonItem, styles.headerAvatar]}>
+                                    <View style={[
+                                        styles.skeletonAvatar,
+                                        skeletonStyles.skeletonBase,
+                                        { width: 44, height: 44 }
+                                    ]} />
                                     <Animated.View
                                         style={[
                                             styles.shimmer,
-                                            {
-                                                transform: [{ translateX }],
-                                            },
+                                            skeletonStyles.shimmer,
+                                            { transform: [{ translateX }] },
                                         ]}
                                     />
                                 </View>
-                                <View style={styles.skeletonItem}>
-                                    <View style={styles.skeletonBadge} />
-                                    <Animated.View
-                                        style={[
-                                            styles.shimmer,
-                                            {
-                                                transform: [{ translateX }],
-                                            },
-                                        ]}
-                                    />
+                                <View style={{ flex: 1 }}>
+                                    <View style={[styles.skeletonItem, { marginBottom: 6 }]}>
+                                        <View style={[
+                                            styles.skeletonLine,
+                                            skeletonStyles.skeletonBase,
+                                            { width: '60%', height: 18 }
+                                        ]} />
+                                        <Animated.View
+                                            style={[
+                                                styles.shimmer,
+                                                skeletonStyles.shimmer,
+                                                { transform: [{ translateX }] },
+                                            ]}
+                                        />
+                                    </View>
+                                    <View style={styles.skeletonItem}>
+                                        <View style={[
+                                            styles.skeletonLine,
+                                            skeletonStyles.skeletonBase,
+                                            { width: '40%', height: 14 }
+                                        ]} />
+                                        <Animated.View
+                                            style={[
+                                                styles.shimmer,
+                                                skeletonStyles.shimmer,
+                                                { transform: [{ translateX }] },
+                                            ]}
+                                        />
+                                    </View>
                                 </View>
                             </View>
-
-                            <View style={styles.cardContent}>
-                                <View style={styles.skeletonItem}>
-                                    <View style={[styles.skeletonLine, { width: '90%' }]} />
-                                    <Animated.View
-                                        style={[
-                                            styles.shimmer,
-                                            {
-                                                transform: [{ translateX }],
-                                            },
-                                        ]}
-                                    />
-                                </View>
-                                <View style={styles.skeletonItem}>
-                                    <View style={[styles.skeletonLine, { width: '70%' }]} />
-                                    <Animated.View
-                                        style={[
-                                            styles.shimmer,
-                                            {
-                                                transform: [{ translateX }],
-                                            },
-                                        ]}
-                                    />
-                                </View>
-                                <View style={styles.skeletonItem}>
-                                    <View style={[styles.skeletonLineSmall, { width: '50%' }]} />
-                                    <Animated.View
-                                        style={[
-                                            styles.shimmer,
-                                            {
-                                                transform: [{ translateX }],
-                                            },
-                                        ]}
-                                    />
-                                </View>
+                            <View style={[styles.skeletonItem, styles.headerButton]}>
+                                <View style={[
+                                    styles.skeletonCircle,
+                                    skeletonStyles.skeletonBase,
+                                ]} />
+                                <Animated.View
+                                    style={[
+                                        styles.shimmer,
+                                        skeletonStyles.shimmer,
+                                        { transform: [{ translateX }] },
+                                    ]}
+                                />
                             </View>
                         </View>
-                    ))}
-                </View>
 
-                {/* Bottom Action Skeleton */}
-                <View style={styles.bottomSkeleton}>
-                    <View style={styles.skeletonItem}>
-                        {/* <View style={styles.skeletonButton} /> */}
-                        <Animated.View
-                            style={[
-                                styles.shimmer,
-                                {
-                                    transform: [{ translateX }],
-                                },
-                            ]}
-                        />
+                        {/* Messages Title and Archive Button */}
+                        <View style={styles.titleRow}>
+                            <View style={[styles.skeletonItem, { flex: 1 }]}>
+                                <View style={[
+                                    styles.skeletonLine,
+                                    skeletonStyles.skeletonBase,
+                                    { width: '35%', height: 22 }
+                                ]} />
+                                <Animated.View
+                                    style={[
+                                        styles.shimmer,
+                                        skeletonStyles.shimmer,
+                                        { transform: [{ translateX }] },
+                                    ]}
+                                />
+                            </View>
+                            <View style={[styles.skeletonItem, styles.headerButton]}>
+                                <View style={[
+                                    styles.skeletonCircle,
+                                    skeletonStyles.skeletonBase,
+                                ]} />
+                                <Animated.View
+                                    style={[
+                                        styles.shimmer,
+                                        skeletonStyles.shimmer,
+                                        { transform: [{ translateX }] },
+                                    ]}
+                                />
+                            </View>
+                        </View>
+
+                        {/* Search Bar */}
+                        <View style={[styles.skeletonItem, styles.searchBar]}>
+                            <View style={[
+                                styles.skeletonSearchBar,
+                                skeletonStyles.skeletonBase,
+                            ]} />
+                            <Animated.View
+                                style={[
+                                    styles.shimmer,
+                                    skeletonStyles.shimmer,
+                                    { transform: [{ translateX }] },
+                                ]}
+                            />
+                        </View>
                     </View>
-                </View>
+                )}
 
-                {/* Loading indicator */}
-                <View style={styles.loadingIndicator}>
-                    <LoadingDots />
+                {/* List Items */}
+                <View style={styles.listContainer}>
+                    {[...Array(itemCount)].map((_, index) => (
+                        <View key={index}>
+                            {effectiveVariant === 'contacts' ? (
+                                <ContactSkeletonItem
+                                    translateX={translateX}
+                                    skeletonStyles={skeletonStyles}
+                                />
+                            ) : (
+                                <ChatSkeletonItem
+                                    translateX={translateX}
+                                    skeletonStyles={skeletonStyles}
+                                />
+                            )}
+                        </View>
+                    ))}
                 </View>
             </Animated.View>
         </SafeAreaView>
     );
 };
 
-// Loading dots component
-const LoadingDots: React.FC = () => {
-    const dot1 = React.useRef(new Animated.Value(0.3)).current;
-    const dot2 = React.useRef(new Animated.Value(0.3)).current;
-    const dot3 = React.useRef(new Animated.Value(0.3)).current;
-
-    React.useEffect(() => {
-        const createAnimation = (value: Animated.Value, delay: number) =>
-            Animated.loop(
-                Animated.sequence([
-                    Animated.delay(delay),
-                    Animated.timing(value, {
-                        toValue: 1,
-                        duration: 400,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(value, {
-                        toValue: 0.3,
-                        duration: 400,
-                        useNativeDriver: true,
-                    }),
-                ])
-            );
-
-        const animation1 = createAnimation(dot1, 0);
-        const animation2 = createAnimation(dot2, 200);
-        const animation3 = createAnimation(dot3, 400);
-
-        animation1.start();
-        animation2.start();
-        animation3.start();
-
-        return () => {
-            animation1.stop();
-            animation2.stop();
-            animation3.stop();
-        };
-    }, []);
-
+// Contact List Item Skeleton (for patients)
+const ContactSkeletonItem: React.FC<{
+    translateX: Animated.AnimatedInterpolation<string | number>;
+    skeletonStyles: any;
+}> = ({ translateX, skeletonStyles }) => {
     return (
-        <View style={styles.dotsContainer}>
-            <Animated.View style={[styles.dot, { opacity: dot1 }]} />
-            <Animated.View style={[styles.dot, { opacity: dot2 }]} />
-            <Animated.View style={[styles.dot, { opacity: dot3 }]} />
+        <View style={styles.listItem}>
+            {/* Avatar */}
+            <View style={[styles.skeletonItem, styles.avatar]}>
+                <View style={[styles.skeletonAvatar, skeletonStyles.skeletonBase]} />
+                <Animated.View
+                    style={[
+                        styles.shimmer,
+                        skeletonStyles.shimmer,
+                        { transform: [{ translateX }] },
+                    ]}
+                />
+            </View>
+
+            {/* Content */}
+            <View style={styles.listItemContent}>
+                <View style={styles.skeletonItem}>
+                    <View style={[
+                        styles.skeletonLine,
+                        skeletonStyles.skeletonBase,
+                        { width: '70%', height: 16 }
+                    ]} />
+                    <Animated.View
+                        style={[
+                            styles.shimmer,
+                            skeletonStyles.shimmer,
+                            { transform: [{ translateX }] },
+                        ]}
+                    />
+                </View>
+
+                <View style={[styles.skeletonItem, { marginTop: 8 }]}>
+                    <View style={[
+                        styles.skeletonLine,
+                        skeletonStyles.skeletonBase,
+                        { width: '50%', height: 14 }
+                    ]} />
+                    <Animated.View
+                        style={[
+                            styles.shimmer,
+                            skeletonStyles.shimmer,
+                            { transform: [{ translateX }] },
+                        ]}
+                    />
+                </View>
+            </View>
         </View>
     );
 };
 
-// Simple spinner alternative
-export const SimpleSpinner: React.FC = () => {
-    const spinValue = React.useRef(new Animated.Value(0)).current;
-
-    React.useEffect(() => {
-        const spin = Animated.loop(
-            Animated.timing(spinValue, {
-                toValue: 1,
-                duration: 1000,
-                useNativeDriver: true,
-            })
-        );
-        spin.start();
-        return () => spin.stop();
-    }, []);
-
-    const rotate = spinValue.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
-    });
-
+// Chat List Item Skeleton (for therapists)
+const ChatSkeletonItem: React.FC<{
+    translateX: Animated.AnimatedInterpolation<string | number>;
+    skeletonStyles: any;
+}> = ({ translateX, skeletonStyles }) => {
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.centerContent}>
+        <View style={styles.listItem}>
+            {/* Avatar */}
+            <View style={[styles.skeletonItem, styles.avatar]}>
+                <View style={[styles.skeletonAvatar, skeletonStyles.skeletonBase]} />
                 <Animated.View
                     style={[
-                        styles.simpleSpinner,
-                        { transform: [{ rotate }] },
+                        styles.shimmer,
+                        skeletonStyles.shimmer,
+                        { transform: [{ translateX }] },
                     ]}
                 />
-                <Text style={styles.loadingText}>Loading...</Text>
             </View>
-        </SafeAreaView>
+
+            {/* Content */}
+            <View style={styles.chatItemContent}>
+                <View style={styles.chatItemHeader}>
+                    <View style={[styles.skeletonItem, { flex: 1 }]}>
+                        <View style={[
+                            styles.skeletonLine,
+                            skeletonStyles.skeletonBase,
+                            { width: '60%', height: 16 }
+                        ]} />
+                        <Animated.View
+                            style={[
+                                styles.shimmer,
+                                skeletonStyles.shimmer,
+                                { transform: [{ translateX }] },
+                            ]}
+                        />
+                    </View>
+
+                    <View style={[styles.skeletonItem, { marginLeft: 8 }]}>
+                        <View style={[
+                            styles.skeletonLine,
+                            skeletonStyles.skeletonBase,
+                            { width: 40, height: 12 }
+                        ]} />
+                        <Animated.View
+                            style={[
+                                styles.shimmer,
+                                skeletonStyles.shimmer,
+                                { transform: [{ translateX }] },
+                            ]}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.chatItemBottom}>
+                    <View style={[styles.skeletonItem, { flex: 1 }]}>
+                        <View style={[
+                            styles.skeletonLine,
+                            skeletonStyles.skeletonBase,
+                            { width: '80%', height: 14 }
+                        ]} />
+                        <Animated.View
+                            style={[
+                                styles.shimmer,
+                                skeletonStyles.shimmer,
+                                { transform: [{ translateX }] },
+                            ]}
+                        />
+                    </View>
+
+                    <View style={[styles.skeletonItem, { marginLeft: 8 }]}>
+                        <View style={[
+                            styles.skeletonBadge,
+                            skeletonStyles.skeletonBase,
+                        ]} />
+                        <Animated.View
+                            style={[
+                                styles.shimmer,
+                                skeletonStyles.shimmer,
+                                { transform: [{ translateX }] },
+                            ]}
+                        />
+                    </View>
+                </View>
+            </View>
+        </View>
     );
+};
+
+// Helper function to get skeleton styles based on theme
+const getSkeletonStyles = (colors: any, isDark: boolean) => {
+    return {
+        skeletonBase: {
+            backgroundColor: isDark ? colors.item : '#f0f0f0',
+        },
+        shimmer: {
+            backgroundColor: isDark
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(255, 255, 255, 0.8)',
+        },
+    };
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#ffffff',
     },
     content: {
         flex: 1,
-        padding: 16,
-    },
-    centerContent: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 
-    // Header Skeleton
-    headerSkeleton: {
-        marginBottom: 32,
-        paddingTop: 20,
+    // Header Section
+    headerSection: {
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 8,
+    },
+    logoSkeleton: {
+        marginBottom: 12,
+    },
+    userHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    userHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: 12,
+    },
+    headerAvatar: {
+        marginRight: 0,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    headerButton: {
+        width: 36,
+        height: 36,
+    },
+    skeletonCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+    },
+    searchBar: {
+        marginBottom: 8,
+    },
+    skeletonSearchBar: {
+        height: 40,
+        borderRadius: 20,
+        width: '100%',
+    },
+
+    // List Container
+    listContainer: {
+        flex: 1,
+    },
+
+    // List Item
+    listItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderBottomWidth: 0.5,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+    },
+
+    // Avatar
+    avatar: {
+        marginRight: 12,
+    },
+    skeletonAvatar: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
     },
 
     // Skeleton Items
     skeletonItem: {
         position: 'relative',
         overflow: 'hidden',
-        marginBottom: 12,
-    },
-    // skeletonAvatar: {
-    //     width: 60,
-    //     height: 60,
-    //     borderRadius: 30,
-    //     backgroundColor: '#f0f0f0',
-    //     alignSelf: 'center',
-    //     marginBottom: 16,
-    // },
-    skeletonTitle: {
-        alignItems: 'center',
-    },
-    skeletonSubtitle: {
-        alignItems: 'center',
     },
     skeletonLine: {
-        height: 20,
-        backgroundColor: '#f0f0f0',
         borderRadius: 4,
-        width: '60%',
-    },
-    skeletonLineSmall: {
-        height: 16,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 4,
-        width: '40%',
     },
     skeletonBadge: {
-        height: 24,
-        width: 60,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 12,
-    },
-    skeletonButton: {
-        height: 44,
-        backgroundColor: '#f0f0f0',
-        borderRadius: 8,
-        width: '100%',
+        width: 20,
+        height: 20,
+        borderRadius: 10,
     },
 
-    // Cards Skeleton
-    cardsSkeleton: {
+    // Contact List Content
+    listItemContent: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+
+    // Chat List Content
+    chatItemContent: {
         flex: 1,
     },
-    skeletonCard: {
-        backgroundColor: '#fafafa',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: '#e5e5e5',
-    },
-    cardHeader: {
+    chatItemHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        justifyContent: 'space-between',
+        marginBottom: 6,
     },
-    cardTitle: {
-        flex: 1,
-        marginRight: 12,
-    },
-    cardContent: {
-        borderTopWidth: 1,
-        borderTopColor: '#e5e5e5',
-        paddingTop: 12,
-    },
-
-    // Bottom Skeleton
-    bottomSkeleton: {
-        marginTop: 20,
+    chatItemBottom: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
 
     // Shimmer Effect
@@ -370,42 +516,16 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    },
-
-    // Loading Indicator
-    loadingIndicator: {
-        alignItems: 'center',
-        marginTop: 32,
-    },
-    dotsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#999999',
-        marginHorizontal: 4,
-    },
-
-    // Simple Spinner
-    simpleSpinner: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        borderWidth: 4,
-        borderColor: '#e5e5e5',
-        borderTopColor: '#999999',
-        marginBottom: 20,
-    },
-    loadingText: {
-        color: '#666666',
-        fontSize: 16,
-        fontWeight: '500',
     },
 });
 
 export default SkeletonLoader;
+
+// Export variants for easy use
+export const ContactsSkeletonLoader: React.FC<{ itemCount?: number }> = ({ itemCount }) => (
+    <SkeletonLoader variant="contacts" itemCount={itemCount} />
+);
+
+export const ChatsSkeletonLoader: React.FC<{ itemCount?: number }> = ({ itemCount }) => (
+    <SkeletonLoader variant="chats" itemCount={itemCount} />
+);

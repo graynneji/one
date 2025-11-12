@@ -1,7 +1,8 @@
 import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import React, { Dispatch, SetStateAction } from 'react';
-import { Image, Modal, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 
 interface TherapistProps {

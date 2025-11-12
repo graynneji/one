@@ -707,6 +707,7 @@ import ErrorMessage from '@/components/ErrorMessage';
 import ImageViewer from '@/components/ImageViewer';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { useCrudCreate, useGetAll, useRpc } from '@/hooks/useCrud';
 import { capitalizeFirstLetter, formatThreadTime } from '@/utils';
 import { initialDiscussions as rawInitialDiscussions } from '@/utils/communityUtilis';
@@ -720,7 +721,6 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    useColorScheme,
     View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -1025,7 +1025,7 @@ const Community: React.FC<CommunityProps> = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <TouchableOpacity
                 style={styles.createPostBtn}
                 onPress={() => setIsCreatePostOpen(true)}

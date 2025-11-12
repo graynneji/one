@@ -2,6 +2,7 @@ import Avatar from '@/components/Avatar';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { usePatientInfoContext } from '@/context/patientInfoContext';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { capitalizeFirstLetter, formatDate } from '@/utils';
 import { generatePatientId } from '@/utils/uniqueId';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +15,6 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    useColorScheme,
     View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";

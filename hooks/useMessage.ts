@@ -112,7 +112,7 @@
 import { CrudAdapter, ReadOptions } from "@/adapter/crudAdapter";
 import { useAudio } from "@/context/AudioContext";
 import { CrudService } from "@/services/crudService";
-import { notificationService } from "@/services/notificationService";
+// import { notificationService } from "@/services/notificationService";
 import { Client } from "@/utils/client";
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
@@ -200,12 +200,12 @@ export function useMessage({
                 await playMessageSound();
               } else {
                 // App is in background - send notification
-                await notificationService.sendMessageNotification(
-                  newMessage.sender_name || "New Message",
-                  newMessage.content || "You have a new message",
-                  newMessage.id,
-                  newMessage.sender_id
-                );
+                // await notificationService.sendMessageNotification(
+                //   newMessage.sender_name || "New Message",
+                //   newMessage.content || "You have a new message",
+                //   newMessage.id,
+                //   newMessage.sender_id
+                // );
               }
             }
 

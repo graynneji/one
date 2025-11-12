@@ -2,7 +2,8 @@ const audioSource = require('@/assets/sounds/740421__anthonyrox__message-notific
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
-import { notificationService } from '@/services/notificationService';
+// import { notificationService } from '@/services/notificationService';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { NavigationProp } from '@react-navigation/native';
 import { useAudioPlayer } from 'expo-audio';
 import { SplashScreen, useRouter } from 'expo-router';
@@ -10,11 +11,10 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import {
   ImageBackground,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
-  useColorScheme,
+
   View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -43,13 +43,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 //   };
 // }, []);
 
-SplashScreen.preventAutoHideAsync();
+// SplashScreen.preventAutoHideAsync();
 const WelcomeScreen = ({ navigation }: { navigation: NavigationProp<any> }) => {
   const router = useRouter()
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [tapCount, setTapCount] = useState(0);
-
 
   const player = useAudioPlayer(audioSource);
 
@@ -66,15 +65,14 @@ const WelcomeScreen = ({ navigation }: { navigation: NavigationProp<any> }) => {
   };
 
   const { session, loading } = useCheckAuth()
-  console.log(session, 'session')
   useEffect(() => {
     const checkAuth = async () => {
       if (loading) return;
 
       // Add a small delay for Android to ensure storage is ready
-      if (Platform.OS === 'android') {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      // if (Platform.OS === 'android') {
+      //   await new Promise(resolve => setTimeout(resolve, 100));
+      // }
 
       if (session?.user) {
         if (session.user.user_metadata?.designation === "therapist") {
@@ -91,34 +89,28 @@ const WelcomeScreen = ({ navigation }: { navigation: NavigationProp<any> }) => {
     checkAuth();
   }, [loading, session]);
 
-  // Subscribe to realtime updates
-  // useAppointmentSync(session?.user?.id as string);
-  // // Initial sync on login
+
   // useEffect(() => {
-  //   if (session?.user?.id) {
-  //     syncAppointments(session?.user?.id);
-  //   }
-  // }, [session?.user?.id]);
+  //   // Initialize notifications when app starts
+  //   const initNotifications = async () => {
+  //     await notificationService.initialize();
+  //     const token = notificationService.getPushToken();
 
-  useEffect(() => {
-    // Initialize notifications when app starts
-    const initNotifications = async () => {
-      await notificationService.initialize();
-      const token = notificationService.getPushToken();
+  //     // Save token to your backend/database
+  //     if (token) {
+  //       // await savePushTokenToDatabase(token);
+  //       console.log('Push token:', token);
+  //     }
+  //   };
 
-      // Save token to your backend/database
-      if (token) {
-        // await savePushTokenToDatabase(token);
-        console.log('Push token:', token);
-      }
-    };
-
-    initNotifications();
-  }, []);
+  //   initNotifications();
+  // }, []);
 
   const handleGetStarted = () => router.replace('/auth/get-started');
   const handleSignIn = () => router.replace('/auth/signin');
-  if (loading) return <SkeletonLoader />;
+  if (loading) return <SkeletonLoader variant={session?.user?.user_metadata?.designation === "therapist" ? "contacts" : "chats"} />;
+
+
 
   return (
     <View style={styles.container}>
@@ -179,7 +171,7 @@ const WelcomeScreen = ({ navigation }: { navigation: NavigationProp<any> }) => {
                 </TouchableOpacity>
 
                 <TouchableOpacity activeOpacity={0.6} onPress={handleSecretTap}>
-                  <Text style={styles.provider}>I am a therapy+ provider</Text>
+                  <Text style={styles.provider}>I am a therapyPlus provider</Text>
                 </TouchableOpacity>
                 {/* {tapCount > 0 && tapCount < 5 && (
                   <Text style={styles.hintText}>

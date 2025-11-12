@@ -44,7 +44,6 @@ export class AuthService {
 
   async resendOtp(email: string) {
     const { error } = await this.authAdapter.resendOtp(email);
-    console.log(error, "error");
     if (error) {
       Toast.show({
         type: "error",
@@ -111,7 +110,12 @@ export class AuthService {
     try {
       const { data, error } = await this.authAdapter.refreshOrClearSession();
       const errMsg = (error as any)?.message;
+
       if (errMsg?.includes("Invalid Refresh Token")) {
+        await AsyncStorage.removeItem("supabase.auth.token");
+        return { success: false };
+      }
+      if (errMsg?.includes("Auth session missing!")) {
         await AsyncStorage.removeItem("supabase.auth.token");
         return { success: false };
       }
