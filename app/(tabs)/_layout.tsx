@@ -1,7 +1,9 @@
 import { HapticTab } from '@/components/HapticTab';
+import { IncomingCallModalFixed } from '@/components/IncomingCallModal';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useIncomingCallListener } from '@/hooks/useIncomeCallerListener';
 import { useTotalUnreadCount } from '@/hooks/useMsg';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
@@ -23,6 +25,12 @@ export default function TabLayout() {
     enabled: !!session?.user?.id,
   })
 
+  const {
+    incomingCall,
+    isCallModalVisible,
+    handleAnswerCall,
+    handleRejectCall,
+  } = useIncomingCallListener();
 
 
   return (
@@ -121,6 +129,15 @@ export default function TabLayout() {
           }}
         />
       </Tabs>
+
+      {/* Global Incoming Call Modal */}
+      <IncomingCallModalFixed
+        visible={isCallModalVisible}
+        callerName={incomingCall?.caller_name || 'Unknown Caller'}
+        callType={incomingCall?.call_type || 'audio'}
+        onAnswer={handleAnswerCall}
+        onReject={handleRejectCall}
+      />
     </>
   );
 }

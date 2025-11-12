@@ -79,7 +79,7 @@ export class AuthAdapter {
     } = this.client.supabase.auth.onAuthStateChange((_event, session) => {
       callback(session);
     });
-    return subscription; // caller can unsubscribe
+    return subscription;
   }
   async refreshOrClearSession() {
     const { data, error } = await this.client.supabase.auth.refreshSession();

@@ -82,7 +82,7 @@ const CustomDarkTheme: Theme = {
   }
 };
 
-export default function RootLayout() {
+function RootLayoutInner() {
   const colorScheme = useColorScheme();
 
   const [fontsLoaded, fontError] = useFonts({
@@ -128,32 +128,42 @@ export default function RootLayout() {
   }
 
   return (
-    <DarkLightModeContextProvider>
-      <AuthProvider>
-        <AudioProvider>
-          <PatientIdProvider>
-            <PatientInfoProvider>
-              <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
-                <QueryClientProvider client={queryClient}>
-                  <ErrorBoundary>
-                    <Stack screenOptions={{
-                      headerShown: false,
-                      animation: 'slide_from_right',
-                      animationTypeForReplace: 'push',
-                    }}>
-                      <Stack.Screen name="index" options={{ headerShown: false }} />
-                      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                      <Stack.Screen name="+not-found" />
-                    </Stack>
-                  </ErrorBoundary>
-                </QueryClientProvider>
-                <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-                <Toast />
-              </ThemeProvider>
-            </PatientInfoProvider>
-          </PatientIdProvider>
-        </AudioProvider>
-      </AuthProvider>
-    </DarkLightModeContextProvider>
+    // <DarkLightModeContextProvider>
+    <AuthProvider>
+      <AudioProvider>
+        <PatientIdProvider>
+          <PatientInfoProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? CustomDarkTheme : CustomLightTheme}>
+              <QueryClientProvider client={queryClient}>
+                <ErrorBoundary>
+                  <Stack screenOptions={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    animationTypeForReplace: 'push',
+                  }}>
+                    <Stack.Screen name="index" options={{ headerShown: false }} />
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="+not-found" />
+                  </Stack>
+                </ErrorBoundary>
+              </QueryClientProvider>
+              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              <Toast />
+            </ThemeProvider>
+          </PatientInfoProvider>
+        </PatientIdProvider>
+      </AudioProvider>
+    </AuthProvider>
+    // </DarkLightModeContextProvider>
   );
+}
+
+
+export default function RootLayout() {
+
+  return (
+    <DarkLightModeContextProvider>
+      <RootLayoutInner />
+    </DarkLightModeContextProvider>
+  )
 }
