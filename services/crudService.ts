@@ -62,7 +62,7 @@ export class CrudService {
     table: string,
     payload: Partial<T>,
     column?: string,
-    id?: string
+    id?: string | number
   ) {
     try {
       return await this.crudAdapter.update(table, payload, column, id);
@@ -76,8 +76,17 @@ export class CrudService {
     }
   }
 
-  async deleteUser(id: string) {
-    return await this.crudAdapter.delete("users", id);
+  async deleteUser(table: string, id: string | number) {
+    try {
+      return await this.crudAdapter.delete(table, id);
+    } catch (err: unknown) {
+      Toast.show({
+        type: "error",
+        text1: "Error Occurred",
+        text2: getErrorMessage(err),
+      });
+      return;
+    }
   }
 
   // Example: posts

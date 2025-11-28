@@ -3,7 +3,7 @@ import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/DarkLightModeContext';
 import { useAuth } from '@/hooks/useAuth';
-import { useUpdate } from '@/hooks/useCrud';
+import { useUpdateCrud } from '@/hooks/useCrud';
 import { Ionicons } from '@expo/vector-icons';
 import { createClient } from '@supabase/supabase-js';
 import { Buffer } from 'buffer';
@@ -12,6 +12,7 @@ import { EncodingType, getInfoAsync, readAsStringAsync } from "expo-file-system/
 import { launchImageLibraryAsync, requestMediaLibraryPermissionsAsync } from "expo-image-picker";
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { notificationService } from '@/services/notificationService';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
@@ -60,7 +61,7 @@ const tabs: TabItem[] = [
     { id: 'settings', title: 'Settings', icon: 'settings-outline', iconFill: 'settings' },
 ];
 
-const Settings: React.FC = () => {
+const More: React.FC = () => {
     const [activeTab, setActiveTab] = useState<string>('profile');
     const { session, loading: isPending } = useCheckAuth()
     const colorScheme = useColorScheme();
@@ -82,9 +83,9 @@ const Settings: React.FC = () => {
     });
     const [notifications, setNotifications] = useState<boolean>(true);
     const [biometricAuth, setBiometricAuth] = useState<boolean>(false);
-    const updateCrudAuthMutaion = useUpdate("auth")
-    const updateCrudUserMutaion = useUpdate("user")
-    const updateCrudPatientOrTherapistMutaion = useUpdate(patientTherapist?.table)
+    const updateCrudAuthMutaion = useUpdateCrud("auth")
+    const updateCrudUserMutaion = useUpdateCrud("user")
+    const updateCrudPatientOrTherapistMutaion = useUpdateCrud(patientTherapist?.table)
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const { isDark, themeMode, setThemeMode } = useTheme();
 
@@ -240,6 +241,7 @@ const Settings: React.FC = () => {
     };
 
     const signOut = async () => {
+        await notificationService.removePushToken();
         await logout()
         if (session?.user.user_metadata?.designation === "therapist") {
             router.replace('/auth/therapist-signin')
@@ -789,4 +791,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     },
 });
 
-export default Settings;
+export default More;

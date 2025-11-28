@@ -1,167 +1,183 @@
-// import {
-//   addNotificationReceivedListener,
-//   addNotificationResponseReceivedListener,
-//   AndroidImportance,
-//   cancelAllScheduledNotificationsAsync,
-//   getBadgeCountAsync,
-//   getExpoPushTokenAsync,
-//   getPermissionsAsync,
-//   requestPermissionsAsync,
-//   scheduleNotificationAsync,
-//   setBadgeCountAsync,
-//   setNotificationChannelAsync,
-//   setNotificationHandler,
-// } from "expo-notifications";
-// // import * as Notifications from "expo-notifications";
-// import { Platform } from "react-native";
+import { Client } from "@/utils/client";
+import Constants from "expo-constants";
+import {
+  addNotificationReceivedListener,
+  addNotificationResponseReceivedListener,
+  AndroidImportance,
+  getExpoPushTokenAsync,
+  getPermissionsAsync,
+  requestPermissionsAsync,
+  setNotificationChannelAsync,
+  setNotificationHandler,
+} from "expo-notifications";
+import { Platform } from "react-native";
 
-// // Configure how notifications are handled when app is in foreground
-// setNotificationHandler({
-//   handleNotification: async () => ({
-//     shouldShowAlert: true,
-//     shouldPlaySound: true,
-//     shouldSetBadge: true,
-//     shouldShowBanner: true,
-//     shouldShowList: true,
-//   }),
-// });
+setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
-// class NotificationService {
-//   private static instance: NotificationService;
-//   private pushToken: string | null = null;
+class NotificationService {
+  private static instance: NotificationService;
+  private pushToken: string | null = null;
+  private client: Client;
+  private userId: string | null = null;
 
-//   private constructor() {}
+  private constructor() {
+    this.client = new Client();
+  }
 
-//   // Singleton pattern - only one instance exists
-//   static getInstance(): NotificationService {
-//     if (!NotificationService.instance) {
-//       NotificationService.instance = new NotificationService();
-//     }
-//     return NotificationService.instance;
-//   }
+  static getInstance(): NotificationService {
+    if (!NotificationService.instance) {
+      NotificationService.instance = new NotificationService();
+    }
+    return NotificationService.instance;
+  }
 
-//   // Initialize notifications (call once in App.tsx)
-//   async initialize() {
-//     try {
-//       await this.setupNotificationChannel();
-//       await this.requestPermissions();
-//       this.setupNotificationListeners();
-//     } catch (error) {
-//       console.error("Failed to initialize notifications:", error);
-//     }
-//   }
+  async initialize(userId?: string) {
+    try {
+      if (userId) {
+        this.userId = userId;
+      }
+      await this.setupNotificationChannel();
+      const token = await this.requestPermissions();
 
-//   // Setup Android notification channel
-//   private async setupNotificationChannel() {
-//     if (Platform.OS === "android") {
-//       await setNotificationChannelAsync("messages", {
-//         name: "Messages",
-//         importance: AndroidImportance.MAX,
-//         vibrationPattern: [0, 250, 250, 250],
-//         sound: "message.wav", // Optional: custom sound
-//         lightColor: "#FF231F7C",
-//       });
-//     }
-//   }
+      if (token && this.userId) {
+        await this.storePushTokenInUserTable(token);
+      }
 
-//   // Request notification permissions
-//   async requestPermissions(): Promise<string | null> {
-//     const { status: existingStatus } = await getPermissionsAsync();
-//     let finalStatus = existingStatus;
+      this.setupNotificationListeners();
+      return token;
+    } catch (error) {
+      console.error("Failed to initialize notifications:", error);
+      return null;
+    }
+  }
 
-//     if (existingStatus !== "granted") {
-//       const { status } = await requestPermissionsAsync();
-//       finalStatus = status;
-//     }
+  private async setupNotificationChannel() {
+    if (Platform.OS === "android") {
+      await setNotificationChannelAsync("messages", {
+        name: "Messages",
+        importance: AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        sound: "message.wav",
+        lightColor: "#FF231F7C",
+      });
 
-//     if (finalStatus !== "granted") {
-//       console.warn("Notification permission not granted");
-//       return null;
-//     }
+      await setNotificationChannelAsync("calls", {
+        name: "Incoming Calls",
+        importance: AndroidImportance.MAX,
+        vibrationPattern: [0, 500, 200, 500],
+        sound: "ringtone.wav",
+        lightColor: "#00FF00",
+      });
+    }
+  }
 
-//     // Get push token for remote notifications
-//     const tokenData = await getExpoPushTokenAsync();
-//     this.pushToken = tokenData.data;
+  async requestPermissions(): Promise<string | null> {
+    const { status: existingStatus } = await getPermissionsAsync();
+    let finalStatus = existingStatus;
 
-//     return this.pushToken;
-//   }
+    if (existingStatus !== "granted") {
+      const { status } = await requestPermissionsAsync();
+      finalStatus = status;
+    }
 
-//   // Get the current push token
-//   getPushToken(): string | null {
-//     return this.pushToken;
-//   }
+    if (finalStatus !== "granted") {
+      console.warn("Notification permission not granted");
+      return null;
+    }
 
-//   // Send a local notification
-//   async sendLocalNotification(
-//     title: string,
-//     body: string,
-//     data?: Record<string, any>
-//   ) {
-//     try {
-//       await scheduleNotificationAsync({
-//         content: {
-//           title,
-//           body,
-//           sound: "default",
-//           data: data || {},
-//         },
-//         trigger: null, // Show immediately
-//       });
-//     } catch (error) {
-//       console.error("Failed to send notification:", error);
-//     }
-//   }
+    const tokenData = await getExpoPushTokenAsync({
+      projectId:
+        process.env.EXPO_PUBLIC_PROJECT_ID ??
+        Constants.expoConfig?.extra?.expoProjectId,
+    });
+    this.pushToken = tokenData.data;
 
-//   // Send a message notification
-//   async sendMessageNotification(
-//     senderName: string,
-//     messageContent: string,
-//     messageId: string,
-//     senderId: string
-//   ) {
-//     await this.sendLocalNotification(senderName, messageContent, {
-//       type: "message",
-//       messageId,
-//       senderId,
-//     });
-//   }
+    return this.pushToken;
+  }
 
-//   // Setup notification listeners
-//   private setupNotificationListeners() {
-//     // When notification is received while app is in foreground
-//     addNotificationReceivedListener((notification) => {
-//       console.log("Notification received:", notification);
-//     });
+  // Store push token directly in user table using JSONB
+  private async storePushTokenInUserTable(token: string) {
+    try {
+      if (!this.userId) {
+        console.warn("No userId available to store push token");
+        return;
+      }
 
-//     // When user taps on notification
-//     addNotificationResponseReceivedListener((response) => {
-//       const data = response.notification.request.content.data;
-//       console.log("Notification tapped:", data);
+      // Call the database function to update push tokens
+      const { error } = await this.client.supabase.rpc("upsert_push_token", {
+        p_user_id: this.userId,
+        p_token: token,
+        p_platform: Platform.OS,
+      });
 
-//       // Handle navigation based on notification data
-//       // You can use navigation service here
-//       if (data.type === "message") {
-//         // Navigate to chat screen with senderId
-//         // NavigationService.navigate('Chat', { userId: data.senderId });
-//       }
-//     });
-//   }
+      if (error) {
+        console.error("Error storing push token:", error);
+      } else {
+        console.log("Push token stored successfully in user table");
+      }
+    } catch (error) {
+      console.error("Failed to store push token:", error);
+    }
+  }
 
-//   // Cancel all notifications
-//   async cancelAllNotifications() {
-//     await cancelAllScheduledNotificationsAsync();
-//   }
+  // Remove push token (on logout)
+  async removePushToken() {
+    try {
+      if (!this.userId || !this.pushToken) return;
 
-//   // Get notification badge count
-//   async getBadgeCount(): Promise<number> {
-//     return await getBadgeCountAsync();
-//   }
+      // Get current tokens
+      const { data: userData } = await this.client.supabase
+        .from("user")
+        .select("push_tokens")
+        .eq("user_id", this.userId)
+        .single();
 
-//   // Set notification badge count
-//   async setBadgeCount(count: number) {
-//     await setBadgeCountAsync(count);
-//   }
-// }
+      if (userData?.push_tokens) {
+        // Filter out current device's token
+        const updatedTokens = (userData.push_tokens as any[]).filter(
+          (t: any) => t.platform !== Platform.OS
+        );
 
-// // Export singleton instance
-// export const notificationService = NotificationService.getInstance();
+        // Update user table
+        await this.client.supabase
+          .from("user")
+          .update({ push_tokens: updatedTokens })
+          .eq("user_id", this.userId);
+      }
+    } catch (error) {
+      console.error("Failed to remove push token:", error);
+    }
+  }
+
+  getPushToken(): string | null {
+    return this.pushToken;
+  }
+
+  private setupNotificationListeners() {
+    addNotificationReceivedListener((notification) => {
+      console.log("Notification received:", notification);
+    });
+
+    addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data;
+      console.log("Notification tapped:", data);
+
+      // Handle navigation based on notification type
+      if (data.type === "message") {
+        // Navigate to chat
+      } else if (data.type === "incoming_call") {
+        // Navigate to call screen
+      }
+    });
+  }
+}
+
+export const notificationService = NotificationService.getInstance();

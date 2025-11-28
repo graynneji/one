@@ -1,5 +1,5 @@
 import { AVATAR_COLORS } from "@/constants/Avatar";
-const messageSound = require("@/assets/sounds/740421__anthonyrox__message-notification-2.wav");
+const messageSound = require("@/assets/sounds/message.wav");
 
 // 1. Configure notifications handler
 

@@ -6,6 +6,7 @@ import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export interface noteFormProps {
+    id?: string | number,
     content: string,
     type: "session" | "observation" | "goal" | "reminder",
     is_private: boolean

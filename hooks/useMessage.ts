@@ -1,8 +1,10 @@
 // import { CrudAdapter, ReadOptions } from "@/adapter/crudAdapter";
+// import { useAudio } from "@/context/AudioContext";
 // import { CrudService } from "@/services/crudService";
-// import { playSound } from "@/utils";
+// import { notificationService } from "@/services/notificationService";
 // import { Client } from "@/utils/client";
 // import { useEffect, useState } from "react";
+// import { AppState } from "react-native";
 
 // interface UseRealTimeProps {
 //   table: string;
@@ -29,8 +31,11 @@
 // }: UseRealTimeProps) {
 //   const [messages, setMessages] = useState<any[]>([]);
 //   const [hasMore, setHasMore] = useState(true);
+//   const { playMessageSound } = useAudio();
+
 //   useEffect(() => {
 //     if (!senderId || !receiverId) return;
+
 //     const fetchInitial = async () => {
 //       // Step 1: get total count
 //       const response = await crudService.getUserById(table, filters, column, {
@@ -63,7 +68,6 @@
 //         "postgres_changes",
 //         { event: "INSERT", schema: "public", table },
 //         async (payload: { new: any }) => {
-//           await playSound();
 //           const newMessage = payload.new;
 //           const isBetweenCurrentUsers =
 //             (newMessage?.sender_id === senderId &&
@@ -72,6 +76,28 @@
 //               newMessage?.reciever_id === senderId);
 
 //           if (isBetweenCurrentUsers) {
+//             // Only play sound if the message was sent BY the other user TO the current user
+//             const isReceivedMessage =
+//               newMessage?.sender_id === receiverId &&
+//               newMessage?.reciever_id === senderId;
+
+//             if (isReceivedMessage) {
+//               const appState = AppState.currentState;
+
+//               if (appState === "active") {
+//                 // App is in foreground - just play sound
+//                 await playMessageSound();
+//               } else {
+//                 // App is in background - send notification
+//                 await notificationService.sendMessageNotification(
+//                   newMessage.sender_name || "New Message",
+//                   newMessage.content || "You have a new message",
+//                   newMessage.id,
+//                   newMessage.sender_id
+//                 );
+//               }
+//             }
+
 //             setMessages((prev) => [...prev, newMessage]);
 //           }
 //         }
@@ -112,7 +138,6 @@
 import { CrudAdapter, ReadOptions } from "@/adapter/crudAdapter";
 import { useAudio } from "@/context/AudioContext";
 import { CrudService } from "@/services/crudService";
-// import { notificationService } from "@/services/notificationService";
 import { Client } from "@/utils/client";
 import { useEffect, useState } from "react";
 import { AppState } from "react-native";
@@ -154,6 +179,7 @@ export function useMessage({
         count: "exact",
       });
       const count = response?.count;
+
       // Step 2: calculate range
       const from = Math.max((count ?? 0) - pageSize, 0);
       const to = (count ?? 0) - 1;
@@ -195,17 +221,10 @@ export function useMessage({
             if (isReceivedMessage) {
               const appState = AppState.currentState;
 
+              // Only play sound if app is in foreground
+              // Push notifications are handled by database trigger
               if (appState === "active") {
-                // App is in foreground - just play sound
                 await playMessageSound();
-              } else {
-                // App is in background - send notification
-                // await notificationService.sendMessageNotification(
-                //   newMessage.sender_name || "New Message",
-                //   newMessage.content || "You have a new message",
-                //   newMessage.id,
-                //   newMessage.sender_id
-                // );
               }
             }
 

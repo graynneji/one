@@ -1,9 +1,8 @@
 import { HapticTab } from '@/components/HapticTab';
-import { IncomingCallModalFixed } from '@/components/IncomingCallModal';
 import { Colors } from '@/constants/Colors';
 import { useCheckAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useIncomingCallListener } from '@/hooks/useIncomeCallerListener';
+// import { useIncomingCallListener } from '@/hooks/useIncomeCallerListener';
 import { useTotalUnreadCount } from '@/hooks/useMsg';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
@@ -25,12 +24,14 @@ export default function TabLayout() {
     enabled: !!session?.user?.id,
   })
 
-  const {
-    incomingCall,
-    isCallModalVisible,
-    handleAnswerCall,
-    handleRejectCall,
-  } = useIncomingCallListener();
+  //for incoming call uncomment during build
+
+  // const {
+  //   incomingCall,
+  //   isCallModalVisible,
+  //   handleAnswerCall,
+  //   handleRejectCall,
+  // } = useIncomingCallListener();
 
 
   return (
@@ -45,7 +46,7 @@ export default function TabLayout() {
           tabBarStyle: {
             backgroundColor: colors.background,
             borderTopWidth: 1,
-            borderTopColor: colors.border,
+            borderTopColor: colors.divider,
             elevation: 8,
             shadowColor: '#000000',
             shadowOffset: { width: 0, height: -2 },
@@ -108,9 +109,9 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="settings"
+          name="more"
           options={{
-            title: 'Settings',
+            title: 'More',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons
                 size={24}
@@ -120,24 +121,18 @@ export default function TabLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="call"
-          options={{
-            headerShown: false,
-            title: 'CallScreen',
-            href: null
-          }}
-        />
       </Tabs>
 
+      {/*Uncomment durinng build*/}
       {/* Global Incoming Call Modal */}
-      <IncomingCallModalFixed
+      {/* <IncomingCallModalFixed
         visible={isCallModalVisible}
         callerName={incomingCall?.caller_name || 'Unknown Caller'}
         callType={incomingCall?.call_type || 'audio'}
         onAnswer={handleAnswerCall}
         onReject={handleRejectCall}
-      />
+      /> */}
     </>
   );
 }
+

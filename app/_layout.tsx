@@ -9,7 +9,6 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { queryClient } from '@/utils/queryClient';
 import { Theme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
-import * as Font from 'expo-font';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -115,8 +114,6 @@ function RootLayoutInner() {
 
   useEffect(() => {
     if (fontsLoaded) {
-      const loadedFonts = Font.getLoadedFonts();
-      console.log('Font loaded successfully', loadedFonts)
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);

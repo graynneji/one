@@ -11,9 +11,9 @@ import { PatientNote, Patients } from '@/types';
 import { formatDate } from '@/utils';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import {
-    Alert,
+    Image,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -23,7 +23,6 @@ import {
     View
 } from 'react-native';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { noteFormProps } from '../../../components/AddNotesModal';
 import EarningModal from '../../../components/EarningModal';
 import SkeletonLoader from '../../../components/SkeletonLoader';
 
@@ -71,102 +70,96 @@ const TherapistDashboard: React.FC = () => {
     const therapistId = therapistData?.result[0]?.id;
     const { data, isLoading, error, refetch } = useGetById("patients", { therapist: therapistId }, "id, created_at, name, therapist, patient_id, profile_picture, session_count, selected_answers, is_subscribed, subscription, patient_notes!patient_id(*)", !!therapistId, {})
     const [refreshing, setRefreshing] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false)
 
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
-    const styles = createStyles(colors);
+    const styles = useMemo(() => createStyles(colors), [colors]);
 
-    const handleRefetch = () => {
-        refetch1()
-        refetch()
-    }
+    // Prepare patient IDs with memoization
+    const patientIds = useMemo(() => {
+        return data?.result?.map((p: Patients) => p.patient_id) || [];
+    }, [data?.result]);
 
-    const onRefresh = () => {
+    // Handler functions
+    const handleRefetch = useCallback(() => {
+        refetch1();
+        refetch();
+    }, [refetch1, refetch]);
+
+    const onRefresh = useCallback(() => {
         try {
             setRefreshing(true);
             handleRefetch();
         } finally {
             setRefreshing(false);
         }
-    };
+    }, [handleRefetch]);
 
-    const [noteForm, setNoteForm] = useState<noteFormProps>({
-        content: '',
-        type: 'session' as PatientNote['type'],
-        is_private: false,
-        patient_id: ''
-    });
 
-    const allPatients = data?.result ?? [];
-    const activePatients = allPatients.filter((p: Patients) => !archivedPatients.includes(p.id.toString()));
-    const archived = allPatients.filter((p: Patients) => archivedPatients.includes(p.id.toString()));
+    // const [noteForm, setNoteForm] = useState<noteFormProps>({
+    //     content: '',
+    //     type: 'session' as PatientNote['type'],
+    //     is_private: false,
+    //     patient_id: ''
+    // });
 
-    const displayPatients = showArchived ? archived : activePatients;
+    const allPatients = useMemo(() => data?.result ?? [], [data?.result]);
 
-    const filteredPatients = displayPatients?.filter((patient: Patients) =>
-        patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase())
-    ) ?? []
+    const activePatients = useMemo(() => {
+        return allPatients.filter((p: Patients) => !archivedPatients.includes(p.id.toString()));
+    }, [allPatients, archivedPatients]);
 
-    // const getStatusColor = (status: Patients['subscription']) => {
-    //     switch (status) {
-    //         case 'active':
-    //             return colors.online;
-    //         case 'pending':
-    //             return colors.sending;
-    //         case 'inactive':
-    //             return colors.offline;
-    //         default:
-    //             return colors.offline;
-    //     }
-    // };
+    const archived = useMemo(() => {
+        return allPatients.filter((p: Patients) => archivedPatients.includes(p.id.toString()));
+    }, [allPatients, archivedPatients]);
 
-    // const getNoteTypeColor: (type: PatientNote['type']) => '#007AFF' | '#6c757d' | '#dc3545' | '#28a745' | '#ffc107' = (type) => {
-    //     switch (type) {
-    //         case 'session':
-    //             return '#007AFF';
-    //         case 'observation':
-    //             return '#28a745';
-    //         case 'goal':
-    //             return '#ffc107';
-    //         case 'reminder':
-    //             return '#dc3545';
-    //         default:
-    //             return '#6c757d';
-    //     }
-    // };
+    const displayPatients = useMemo(() => {
+        return showArchived ? archived : activePatients;
+    }, [showArchived, archived, activePatients]);
 
-    // const openAddNoteModal = () => {
-    //     setNoteForm({
-    //         content: '',
-    //         type: 'session',
-    //         is_private: false,
-    //         patient_id: selectedPatient?.id
+    // const filteredPatients = displayPatients?.filter((patient: Patients) =>
+    //     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //     patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase())
+    // ) ?? []
+
+    const filteredPatients = useMemo(() => {
+        return displayPatients?.filter((patient: Patients) =>
+            patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase())
+        ) ?? [];
+    }, [displayPatients, searchQuery]);
+
+
+    // const openChat = (patient: Patients) => {
+    //     router.push({
+    //         pathname: "/(tabs)/session/chat",
+    //         params: {
+    //             id: String(patient.id),
+    //             patientId: patient.patient_id,
+    //             patientName: patient.name,
+    //             profile_picture: patient.profile_picture
+    //         },
     //     });
-    //     setIsAddNoteModalVisible(true);
     // };
 
-    // const createUserMutation = useCrudCreate<NoteForm>("patient_notes");
+    // const openPatientNotes = (patient: Patients) => {
+    //     // router.push("/(tabs)/session/patients-notes/");
+    //     router.push({
+    //         pathname: "/(tabs)/session/patients-notes",
+    //         params: {
+    //             id: String(patient.id),
+    //             patientName: patient.name,
+    //         },
+    //     });
+    //     // setPatient(patient) // remove the patient context later
+    // };
 
-    // const saveNote = () => {
-    //     if (!noteForm.content.trim()) {
-    //         Alert.alert('Error', 'Please enter note content');
-    //         return;
-    //     }
+    const openChat = useCallback((patient: Patients) => {
+        if (isNavigating) return; // prevent double tap
 
-    //     if (!selectedPatient) return;
+        setIsNavigating(true);
 
-    //     const newNote: NoteForm = {
-    //         patient_id: selectedPatient?.id,
-    //         content: noteForm.content.trim(),
-    //         type: noteForm.type,
-    //         is_private: noteForm.is_private,
-    //     };
-    //     createUserMutation.mutate(noteForm);
-    //     setIsAddNoteModalVisible(false);
-    // }
-
-    const openChat = (patient: Patients) => {
         router.push({
             pathname: "/(tabs)/session/chat",
             params: {
@@ -176,10 +169,13 @@ const TherapistDashboard: React.FC = () => {
                 profile_picture: patient.profile_picture
             },
         });
-    };
 
-    const openPatientNotes = (patient: Patients) => {
-        // router.push("/(tabs)/session/patients-notes/");
+        // Reset after navigation finishes
+        setTimeout(() => setIsNavigating(false), 1000);
+    }, [router, isNavigating]);
+
+
+    const openPatientNotes = useCallback((patient: Patients) => {
         router.push({
             pathname: "/(tabs)/session/patients-notes",
             params: {
@@ -187,44 +183,41 @@ const TherapistDashboard: React.FC = () => {
                 patientName: patient.name,
             },
         });
-        // setPatient(patient) // remove the patient context later
-    };
+    }, [router]);
+    // const openPatientInfo = (patient: Patients) => {
+    //     router.push("/(tabs)/session/patients-info/");
+    //     setPatient(patient);
+    // };
 
-    const openPatientInfo = (patient: Patients) => {
+    // const toggleArchive = (patientId: string) => {
+    //     if (archivedPatients.includes(patientId)) {
+    //         setArchivedPatients(archivedPatients.filter(id => id !== patientId));
+    //     } else {
+    //         setArchivedPatients([...archivedPatients, patientId]);
+    //     }
+    // };
+
+    const openPatientInfo = useCallback((patient: Patients) => {
         router.push("/(tabs)/session/patients-info/");
         setPatient(patient);
-    };
+    }, [router, setPatient]);
 
-    const toggleArchive = (patientId: string) => {
-        if (archivedPatients.includes(patientId)) {
-            setArchivedPatients(archivedPatients.filter(id => id !== patientId));
-        } else {
-            setArchivedPatients([...archivedPatients, patientId]);
-        }
-    };
+    const toggleArchive = useCallback((patientId: string) => {
+        setArchivedPatients(prev => {
+            if (prev.includes(patientId)) {
+                return prev.filter(id => id !== patientId);
+            } else {
+                return [...prev, patientId];
+            }
+        });
+    }, []);
 
-    const requestEmergencyAccess = (patient: Patients) => {
-        Alert.alert(
-            'Emergency Contact Request',
-            'This will send a request to platform administrators for emergency contact information. Use only in genuine emergencies.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Request Access',
-                    style: 'destructive',
-                    onPress: () => {
-                        console.log(`Emergency contact request for patient ${patient.patient_id}`);
-                        Alert.alert('Request Sent', 'Emergency contact request has been sent to administrators.');
-                    }
-                }
-            ]
-        );
-    };
+
 
     // const getLastMessage = (patient: Patients) => {
     //     return "No messages yet";
     // };
-    const patientIds = data?.result?.map((p: Patients) => p.patient_id) || [];
+    // const patientIds = data?.result?.map((p: Patients) => p.patient_id) || [];
 
     const { lastMessages, loading: messagesLoading } = useLastMessages({
         table: "messages",
@@ -240,11 +233,13 @@ const TherapistDashboard: React.FC = () => {
             enabled: !!therapistId && patientIds.length > 0,
         }
     )
-    console.log(unreadCounts, "unread")
-    const getUnreadCount = (patient: Patients) => unreadCounts[patient?.patient_id] || null;
-    // Update getLastMessage function
-    const getLastMessage = (patient: Patients) => {
+    // const getUnreadCount = (patient: Patients) => unreadCounts[patient?.patient_id] || null;
+    const getUnreadCount = useCallback((patient: Patients) => {
+        return unreadCounts[patient?.patient_id] || null;
+    }, [unreadCounts]);
 
+    // Update getLastMessage function
+    const getLastMessage = useCallback((patient: Patients) => {
         const lastMsg = lastMessages[patient?.patient_id];
 
         if (!lastMsg) return "No messages yet";
@@ -253,9 +248,9 @@ const TherapistDashboard: React.FC = () => {
         const content = lastMsg.message || "No messages yet";
 
         return content.length > 50 ? prefix + content.slice(0, 50) + "..." : prefix + content;
-    };
+    }, [lastMessages, senderId]);
 
-    const getLastMessageTime = (patient: Patients) => {
+    const getLastMessageTime = useCallback((patient: Patients) => {
         const msg = lastMessages[patient?.patient_id];
         if (!msg) return "";
 
@@ -271,22 +266,20 @@ const TherapistDashboard: React.FC = () => {
         if (diffHours < 24) return `${diffHours}h`;
         if (diffDays < 7) return `${diffDays}d`;
         return formatDate(date);
-    };
+    }, [lastMessages]);
 
 
     if (isLoad || isLoading) {
         return <SkeletonLoader />
     }
-    //    name: session?.user?.user_metadata?.full_name || User.name,
-    //         email: session?.user?.email || User.email,
-    //         phone: "+234 (80) 123-4567", // fallback phone
-    //         profile: session?.user?.user_metadata?.profile_picture
-    // if (!selectedPatient) {
+
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             {/* Enhanced Header */}
             <View style={styles.headerContainer}>
-                <Text style={styles.logoText}>TheraPlus</Text>
+                <View style={styles.logoText}>
+                    <Image source={require('../../../assets/images/therapluslogo.png')} style={{ width: 150, height: 40 }} />
+                </View>
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
                         <Avatar profile_picture={session?.user?.user_metadata?.profile_picture} />
@@ -379,6 +372,7 @@ const TherapistDashboard: React.FC = () => {
                             <SwipeablePatientCard
                                 key={patient.id}
                                 patient={patient}
+                                isNavigating={isNavigating}
                                 onPress={() => openChat(patient)}
                                 onArchive={() => toggleArchive(patient.id.toString())}
                                 onViewNotes={() => openPatientNotes(patient)}
@@ -525,7 +519,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
         paddingHorizontal: 16,
         fontSize: 30,
         fontWeight: '700',
-        marginBottom: 12,
+        // marginBottom: 12,
+        paddingTop: 8,
         fontFamily: Typography.logo.bold
     },
     headerContainer: {
@@ -578,6 +573,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
         fontSize: 13,
         color: colors.textSecondary,
         marginTop: 2,
+        fontFamily: Typography.heading.medium
     },
     headerActions: {
         flexDirection: 'row',

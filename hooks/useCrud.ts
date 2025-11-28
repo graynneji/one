@@ -94,12 +94,15 @@ export function useGetById<T>(
   });
 }
 
-export function useUpdate<T>(table: string, invalidateKeys?: any[] | any[][]) {
+export function useUpdateCrud<T>(
+  table: string,
+  invalidateKeys?: any[] | any[][]
+) {
   return useMutation({
     mutationFn: (vars: {
       payload: Partial<T>;
       column?: string;
-      id?: string;
+      id?: string | number;
     }) => {
       return crudService.updateUser(table, vars.payload, vars.column, vars.id);
     },
@@ -117,11 +120,19 @@ export function useUpdate<T>(table: string, invalidateKeys?: any[] | any[][]) {
   });
 }
 
-export function useDelete() {
+export function useDeleteCrud(table: string, invalidateKeys?: any[] | any[][]) {
   return useMutation({
-    mutationFn: (id: string) => crudService.deleteUser(id),
+    mutationFn: (id: string | number) => crudService.deleteUser(table, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["users"] });
+      if (Array.isArray(invalidateKeys?.[0])) {
+        (invalidateKeys as any[][]).forEach((key) => {
+          queryClient.invalidateQueries({ queryKey: key });
+        });
+      } else {
+        queryClient.invalidateQueries({
+          queryKey: (invalidateKeys as any[]) ?? [table],
+        });
+      }
     },
   });
 }

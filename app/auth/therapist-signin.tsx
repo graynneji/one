@@ -36,13 +36,14 @@ const TherapistSignIn = () => {
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [rememberMe, setRememberMe] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [key, setKey] = useState(0);
     const { login, loading, logout } = useCheckAuth();
     const [biometricIcon, setBiometricIcon] = useState<keyof typeof Ionicons.glyphMap>('scan');
     const [biometricText, setBiometricText] = useState('Continue with Biometrics');
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
     const styles = createStyles(colors);
-    // const { loading: logOutLoading, logout } = useAuth()
 
     useEffect(() => {
         checkBiometricTypes();
@@ -135,11 +136,6 @@ const TherapistSignIn = () => {
         try {
 
             if (!validationSchema.success) {
-                // return new Promise((resolve, reject) => {
-                //     Alert.alert("Something went wrong", validationSchema.error.issues[0].message, [
-                //         { text: "Cancel", style: "cancel", onPress: () => reject(validationSchema.error.issues[0].message) },
-                //     ]);
-                // });
                 Toast.show({
                     type: 'error',
                     text1: 'Validation Error',
@@ -152,7 +148,6 @@ const TherapistSignIn = () => {
 
             if (data) {
                 if (data?.user?.user_metadata?.designation === "therapist") {
-                    // Store credentials for biometric login if remember me is checked
                     router.push("/(tabs)/session");
                     if (rememberMe) {
                         await SecureStore.setItemAsync('therapist_email', formData.email);
@@ -197,7 +192,7 @@ const TherapistSignIn = () => {
         field: string,
         placeholder: string,
         iconName: keyof typeof Ionicons.glyphMap,
-        secureTextEntry = false,
+        isPassword: boolean = false,
         keyboardType: 'default' | 'email-address' = 'default'
     ) => (
         <View style={styles.inputContainer}>
@@ -213,16 +208,32 @@ const TherapistSignIn = () => {
                     style={styles.inputIcon}
                 />
                 <TextInput
+                    key={isPassword ? key : undefined}
                     style={styles.textInput}
                     placeholder={placeholder}
                     value={formData[field as keyof typeof formData]}
                     onChangeText={(value) => handleInputChange(field, value)}
-                    secureTextEntry={secureTextEntry}
+                    secureTextEntry={isPassword && !showPassword}
                     keyboardType={keyboardType}
-                    autoCapitalize={field === 'email' ? 'none' : 'words'}
+                    autoCapitalize="none"
                     autoCorrect={false}
                     placeholderTextColor={colors.placeholder}
                 />
+                {isPassword && (
+                    <TouchableOpacity
+                        onPress={() => {
+                            setShowPassword(!showPassword);
+                            setKey(prev => prev + 1);
+                        }}
+                        style={styles.passwordToggle}
+                    >
+                        <Ionicons
+                            name={showPassword ? 'eye-off' : 'eye'}
+                            size={20}
+                            color={colors.placeholder}
+                        />
+                    </TouchableOpacity>
+                )}
             </View>
         </View>
     );
@@ -307,7 +318,6 @@ const TherapistSignIn = () => {
 
                         <View style={styles.infoBox}>
                             <Ionicons name="information-circle-outline" size={16} color={colors.primary} />
-                            {/* <Ionicons name="information-circle-outline" size={16} color={colors.primary} /> */}
                             <Text style={styles.infoText}>
                                 This is a secure portal for licensed therapists only.
                             </Text>
@@ -406,9 +416,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     textInput: {
         flex: 1,
         paddingVertical: 14,
-        paddingRight: 16,
+        paddingRight: 8,
         fontSize: 16,
         color: colors.inputText,
+    },
+    passwordToggle: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
     },
     optionsContainer: {
         flexDirection: 'row',
@@ -525,7 +539,6 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     },
     switchText: {
         color: colors.textTertiary,
-        // flexDirection: 'row',
         fontSize: 16,
         gap: 4,
         flex: 1,

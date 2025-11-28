@@ -30,6 +30,14 @@ export class AuthAdapter {
     return { data, error };
   }
 
+  async forgetPassword(email: string) {
+    let { data, error } = await this.client.supabase.auth.resetPasswordForEmail(
+      email
+    );
+
+    return { data, error };
+  }
+
   async verifyOtp(email: string, otp: string) {
     const { error } = await this.client.supabase.auth.verifyOtp({
       email,

@@ -3,6 +3,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { Ionicons } from '@expo/vector-icons';
 import React, { Dispatch, SetStateAction } from 'react';
 import { Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 interface TherapistProps {
@@ -42,7 +43,7 @@ const TherapistBioModal: React.FC<TherapistBioModalProps> = ({ showTherapistBio,
             transparent={true}
             animationType="slide"
         >
-            <View style={styles.bioModalOverlay}>
+            <SafeAreaView style={styles.bioModalOverlay} edges={['top', 'left', 'right']}>
                 <View style={styles.bioContainer}>
                     <View style={styles.bioHeader}>
                         <TouchableOpacity
@@ -106,7 +107,7 @@ const TherapistBioModal: React.FC<TherapistBioModalProps> = ({ showTherapistBio,
                         <Text style={styles.bioText}>{therapist.summary}</Text>
                     </View>
                 </View>
-            </View>
+            </SafeAreaView>
         </Modal>
     )
 }
@@ -123,6 +124,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         maxHeight: '85%',
+        borderColor: colors.divider,
+        borderWidth: 0.5,
     },
     bioHeader: {
         flexDirection: 'row',

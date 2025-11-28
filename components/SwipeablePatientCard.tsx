@@ -26,6 +26,7 @@ const SwipeablePatientCard: React.FC<any> = ({
     getLastMessage,
     getLastMessageTime,
     getUnreadCount,
+    isNavigating,
     colors,
     styles
 }) => {
@@ -145,7 +146,7 @@ const SwipeablePatientCard: React.FC<any> = ({
         ? lastMessage.substring(0, 50) + '...'
         : lastMessage;
     // const unreadCount = patient.patient_notes?.length || 0;
-    const notesCount = patient.patient_notes?.length || 0;
+    const notesCount = patient?.patient_notes?.length || 0;
 
     return (
         <View style={styles.swipeContainer}>
@@ -202,7 +203,7 @@ const SwipeablePatientCard: React.FC<any> = ({
                 <TouchableOpacity
                     style={styles.patientCard}
                     onPress={onPress}
-                    disabled={isSwiping}
+                    disabled={isSwiping || isNavigating}
                     activeOpacity={0.7}
                 >
                     <View style={styles.avatarContainer}>

@@ -13,8 +13,8 @@ interface BankDetails {
     bankName: string;
     accountName: string;
     accountNumber: string;
-    // routingNumber: string;
-    // accountType: 'checking' | 'savings';
+    routingNumber: string;
+    accountType: 'checking' | 'savings';
     isDefault: boolean;
 }
 
@@ -47,8 +47,8 @@ const EarningModal: React.FC<EarningProps> = ({
         bankName: '',
         accountName: '',
         accountNumber: '',
-        // routingNumber: '',
-        // accountType: 'checking',
+        routingNumber: '',
+        accountType: 'checking',
         isDefault: false,
     });
 
@@ -82,8 +82,8 @@ const EarningModal: React.FC<EarningProps> = ({
             bankName: '',
             accountName: '',
             accountNumber: '',
-            // routingNumber: '',
-            // accountType: 'checking',
+            routingNumber: '',
+            accountType: 'checking',
             isDefault: false,
         });
 
@@ -276,7 +276,7 @@ const EarningModal: React.FC<EarningProps> = ({
                                                     <Text style={styles.bankCardName}>{bank.bankName}</Text>
                                                     <Text style={styles.bankCardNumber}>•••• •••• •••• {bank.accountNumber.slice(-4)}</Text>
                                                     <Text style={styles.bankCardHolder}>{bank.accountName}</Text>
-                                                    {/* <Text style={styles.bankCardType}>{bank.accountType}</Text> */}
+                                                    <Text style={styles.bankCardType}>{bank.accountType}</Text>
                                                 </View>
                                             ))
                                         )}
@@ -284,105 +284,105 @@ const EarningModal: React.FC<EarningProps> = ({
 
                                     {/* Add Bank Form */}
 
-                                    {/* <ScrollView
+                                    <ScrollView
                                         contentContainerStyle={{ paddingBottom: 20 }}
                                         keyboardShouldPersistTaps="handled"
                                         showsVerticalScrollIndicator={false}
-                                    > */}
-                                    <View style={styles.section}>
-                                        <Text style={styles.sectionTitle}>Add New Account</Text>
+                                    >
+                                        <View style={styles.section}>
+                                            <Text style={styles.sectionTitle}>Add New Account</Text>
 
-                                        <View style={styles.inputContainer}>
-                                            <Text style={styles.inputLabel}>Bank Name</Text>
-                                            <TextInput
-                                                style={styles.input}
-                                                value={newBankDetails.bankName}
-                                                onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, bankName: text }))}
-                                                placeholder="GTCO Group, Access bank, etc."
-                                                placeholderTextColor={colors.placeholder}
-                                            />
-                                        </View>
-
-                                        <View style={styles.inputContainer}>
-                                            <Text style={styles.inputLabel}>Account Holder Name</Text>
-                                            <TextInput
-                                                style={styles.input}
-                                                value={newBankDetails.accountName}
-                                                onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, accountName: text }))}
-                                                placeholder="Full name on account"
-                                                placeholderTextColor={colors.placeholder}
-                                            />
-                                        </View>
-
-                                        <View style={styles.inputContainer}>
-                                            <Text style={styles.inputLabel}>Account Number</Text>
-                                            <TextInput
-                                                style={styles.input}
-                                                value={newBankDetails.accountNumber}
-                                                onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, accountNumber: text }))}
-                                                placeholder="Enter account number"
-                                                placeholderTextColor={colors.placeholder}
-                                                keyboardType="numeric"
-                                                secureTextEntry
-                                            />
-                                        </View>
-
-                                        {/* <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>Routing Number</Text>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={newBankDetails.routingNumber}
-                                        onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, routingNumber: text }))}
-                                        placeholder="9-digit routing number"
-                                        placeholderTextColor={colors.placeholder}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-
-                                <View style={styles.inputContainer}>
-                                    <Text style={styles.inputLabel}>Account Type</Text>
-                                    <View style={styles.accountTypeRow}>
-                                        <TouchableOpacity
-                                            style={[styles.accountTypeChip, newBankDetails.accountType === 'checking' && styles.accountTypeChipActive]}
-                                            onPress={() => setNewBankDetails(prev => ({ ...prev, accountType: 'checking' }))}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={[styles.accountTypeText, newBankDetails.accountType === 'checking' && styles.accountTypeTextActive]}>
-                                                Checking
-                                            </Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity
-                                            style={[styles.accountTypeChip, newBankDetails.accountType === 'savings' && styles.accountTypeChipActive]}
-                                            onPress={() => setNewBankDetails(prev => ({ ...prev, accountType: 'savings' }))}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={[styles.accountTypeText, newBankDetails.accountType === 'savings' && styles.accountTypeTextActive]}>
-                                                Savings
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                </View> */}
-
-                                        <TouchableOpacity
-                                            style={styles.checkboxRow}
-                                            onPress={() => setNewBankDetails(prev => ({ ...prev, isDefault: !prev.isDefault }))}
-                                            activeOpacity={0.7}
-                                        >
-                                            <View style={[styles.checkbox, newBankDetails.isDefault && styles.checkboxChecked]}>
-                                                {newBankDetails.isDefault && <Text style={styles.checkmark}>✓</Text>}
+                                            <View style={styles.inputContainer}>
+                                                <Text style={styles.inputLabel}>Bank Name</Text>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    value={newBankDetails.bankName}
+                                                    onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, bankName: text }))}
+                                                    placeholder="Chase, Wellsfargo, etc."
+                                                    placeholderTextColor={colors.placeholder}
+                                                />
                                             </View>
-                                            <Text style={styles.checkboxLabel}>Set as default account</Text>
-                                        </TouchableOpacity>
 
-                                        <TouchableOpacity
-                                            style={styles.primaryButton}
-                                            onPress={addBankAccount}
-                                            activeOpacity={0.8}
-                                        >
-                                            <Text style={styles.primaryButtonText}>Add Bank Account</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    {/* </ScrollView> */}
+                                            <View style={styles.inputContainer}>
+                                                <Text style={styles.inputLabel}>Account Holder Name</Text>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    value={newBankDetails.accountName}
+                                                    onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, accountName: text }))}
+                                                    placeholder="Full name on account"
+                                                    placeholderTextColor={colors.placeholder}
+                                                />
+                                            </View>
+
+                                            <View style={styles.inputContainer}>
+                                                <Text style={styles.inputLabel}>Account Number</Text>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    value={newBankDetails.accountNumber}
+                                                    onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, accountNumber: text }))}
+                                                    placeholder="Enter account number"
+                                                    placeholderTextColor={colors.placeholder}
+                                                    keyboardType="numeric"
+                                                    secureTextEntry
+                                                />
+                                            </View>
+
+                                            <View style={styles.inputContainer}>
+                                                <Text style={styles.inputLabel}>Routing Number</Text>
+                                                <TextInput
+                                                    style={styles.input}
+                                                    value={newBankDetails.routingNumber}
+                                                    onChangeText={(text) => setNewBankDetails(prev => ({ ...prev, routingNumber: text }))}
+                                                    placeholder="9-digit routing number"
+                                                    placeholderTextColor={colors.placeholder}
+                                                    keyboardType="numeric"
+                                                />
+                                            </View>
+
+                                            <View style={styles.inputContainer}>
+                                                <Text style={styles.inputLabel}>Account Type</Text>
+                                                <View style={styles.accountTypeRow}>
+                                                    <TouchableOpacity
+                                                        style={[styles.accountTypeChip, newBankDetails.accountType === 'checking' && styles.accountTypeChipActive]}
+                                                        onPress={() => setNewBankDetails(prev => ({ ...prev, accountType: 'checking' }))}
+                                                        activeOpacity={0.7}
+                                                    >
+                                                        <Text style={[styles.accountTypeText, newBankDetails.accountType === 'checking' && styles.accountTypeTextActive]}>
+                                                            Checking
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={[styles.accountTypeChip, newBankDetails.accountType === 'savings' && styles.accountTypeChipActive]}
+                                                        onPress={() => setNewBankDetails(prev => ({ ...prev, accountType: 'savings' }))}
+                                                        activeOpacity={0.7}
+                                                    >
+                                                        <Text style={[styles.accountTypeText, newBankDetails.accountType === 'savings' && styles.accountTypeTextActive]}>
+                                                            Savings
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+
+                                            <TouchableOpacity
+                                                style={styles.checkboxRow}
+                                                onPress={() => setNewBankDetails(prev => ({ ...prev, isDefault: !prev.isDefault }))}
+                                                activeOpacity={0.7}
+                                            >
+                                                <View style={[styles.checkbox, newBankDetails.isDefault && styles.checkboxChecked]}>
+                                                    {newBankDetails.isDefault && <Text style={styles.checkmark}>✓</Text>}
+                                                </View>
+                                                <Text style={styles.checkboxLabel}>Set as default account</Text>
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={styles.primaryButton}
+                                                onPress={addBankAccount}
+                                                activeOpacity={0.8}
+                                            >
+                                                <Text style={styles.primaryButtonText}>Add Bank Account</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </ScrollView>
                                 </View>
                             </TouchableWithoutFeedback>
 

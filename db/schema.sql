@@ -32,6 +32,7 @@ create table if not exists public.user (
   user_id uuid references auth.users(id) on delete cascade,
   profile_picture text,
   phone text,
+  push_tokens jsonb default '[]'::jsonb,
   selected_answers jsonb[],
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -576,4 +577,197 @@ BEGIN
 END;
 $function$;
 
+
+-- ===============================
+-- FUNCTION: Update push token
+-- ===============================
+CREATE OR REPLACE FUNCTION public.upsert_push_token(
+  p_user_id UUID,
+  p_token TEXT,
+  p_platform TEXT
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_existing_tokens JSONB;
+  v_new_tokens JSONB;
+BEGIN
+  SELECT COALESCE(push_tokens, '[]'::jsonb)
+  INTO v_existing_tokens
+  FROM public.user
+  WHERE user_id = p_user_id;
+
+  v_new_tokens := (
+    SELECT jsonb_agg(token)
+    FROM jsonb_array_elements(v_existing_tokens) AS token
+    WHERE token->>'platform' != p_platform
+  );
+
+  v_new_tokens := COALESCE(v_new_tokens, '[]'::jsonb) || 
+    jsonb_build_object(
+      'token', p_token,
+      'platform', p_platform,
+      'updated_at', NOW()
+    );
+
+  UPDATE public.user
+  SET push_tokens = v_new_tokens,
+      updated_at = NOW()
+  WHERE user_id = p_user_id;
+END;
+$$;
+
+-- ===============================
+-- TRIGGER: Send notification on new message (SIMPLIFIED)
+-- ===============================
+CREATE OR REPLACE FUNCTION public.notify_new_message()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER  -- ← This is the magic that makes it work!
+SET search_path = public
+AS $$
+DECLARE
+  v_sender_name TEXT;
+  v_receiver_tokens JSONB;
+  v_token_array TEXT[];
+BEGIN
+  -- Get sender's name
+  SELECT COALESCE(name, email)
+  INTO v_sender_name
+  FROM public.user
+  WHERE user_id = NEW.sender_id
+  LIMIT 1;
+
+  -- Get receiver's push tokens
+  SELECT push_tokens
+  INTO v_receiver_tokens
+  FROM public.user
+  WHERE user_id = NEW.reciever_id;
+
+  -- Extract token strings into array
+  SELECT ARRAY_AGG(token->>'token')
+  INTO v_token_array
+  FROM jsonb_array_elements(COALESCE(v_receiver_tokens, '[]'::jsonb)) AS token;
+
+  -- Send push notification if tokens exist
+  IF v_token_array IS NOT NULL AND ARRAY_LENGTH(v_token_array, 1) > 0 THEN
+    PERFORM extensions.http((
+      'POST',
+      'https://YOUR_PROJECT_REF.supabase.co/functions/v1/send-push',  -- ← REPLACE THIS!
+      ARRAY[
+        extensions.http_header('Content-Type', 'application/json'),
+        extensions.http_header('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true))
+      ],
+      'application/json',
+      jsonb_build_object(
+        'to', v_token_array,
+        'title', COALESCE(v_sender_name, 'New Message'),
+        'body', SUBSTRING(NEW.message, 1, 100),
+        'data', jsonb_build_object(
+          'type', 'message',
+          'messageId', NEW.id::text,
+          'senderId', NEW.sender_id::text,
+          'senderName', v_sender_name,
+          'receiverId', NEW.reciever_id::text
+        ),
+        'channelId', 'messages'
+      )::text
+    )::extensions.http_request);
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+-- ===============================
+-- TRIGGER: Send notification on incoming call (SIMPLIFIED)
+-- ===============================
+CREATE OR REPLACE FUNCTION public.notify_incoming_call()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER  -- ← This is the magic that makes it work!
+SET search_path = public
+AS $$
+DECLARE
+  v_caller_name TEXT;
+  v_callee_tokens JSONB;
+  v_token_array TEXT[];
+  v_call_type_display TEXT;
+BEGIN
+  -- Only notify if status is 'ringing'
+  IF NEW.status != 'ringing' THEN
+    RETURN NEW;
+  END IF;
+
+  -- Get caller's name
+  SELECT COALESCE(name, email)
+  INTO v_caller_name
+  FROM public.user
+  WHERE user_id = NEW.caller_id
+  LIMIT 1;
+
+  -- Get callee's push tokens
+  SELECT push_tokens
+  INTO v_callee_tokens
+  FROM public.user
+  WHERE user_id = NEW.callee_id;
+
+  -- Extract token strings
+  SELECT ARRAY_AGG(token->>'token')
+  INTO v_token_array
+  FROM jsonb_array_elements(COALESCE(v_callee_tokens, '[]'::jsonb)) AS token;
+
+  -- Format call type
+  v_call_type_display := CASE 
+    WHEN NEW.call_type = 'video' THEN 'Video Call'
+    ELSE 'Audio Call'
+  END;
+
+  -- Send notification
+  IF v_token_array IS NOT NULL AND ARRAY_LENGTH(v_token_array, 1) > 0 THEN
+    PERFORM extensions.http((
+      'POST',
+      'https://YOUR_PROJECT_REF.supabase.co/functions/v1/send-push',  -- ← REPLACE THIS!
+      ARRAY[
+        extensions.http_header('Content-Type', 'application/json'),
+        extensions.http_header('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true))
+      ],
+      'application/json',
+      jsonb_build_object(
+        'to', v_token_array,
+        'title', COALESCE(v_caller_name, 'Incoming Call'),
+        'body', 'Incoming ' || v_call_type_display,
+        'data', jsonb_build_object(
+          'type', 'incoming_call',
+          'callSessionId', NEW.id::text,
+          'callerId', NEW.caller_id::text,
+          'callerName', v_caller_name,
+          'calleeId', NEW.callee_id::text,
+          'callType', NEW.call_type
+        ),
+        'channelId', 'calls'
+      )::text
+    )::extensions.http_request);
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Apply triggers
+DROP TRIGGER IF EXISTS trigger_notify_new_message ON public.messages;
+CREATE TRIGGER trigger_notify_new_message
+  AFTER INSERT ON public.messages
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_new_message();
+
+DROP TRIGGER IF EXISTS trigger_notify_incoming_call ON public.call_sessions;
+CREATE TRIGGER trigger_notify_incoming_call
+  AFTER INSERT ON public.call_sessions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_incoming_call();
 

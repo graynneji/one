@@ -76,6 +76,19 @@ export class AuthService {
     return { data, error };
   }
 
+  async forgetPassword(email: string) {
+    const { error } = await this.authAdapter.forgetPassword(email);
+    if (error) {
+      Toast.show({
+        type: "error",
+        text1: "Resend otp failed",
+        text2: error.message,
+      });
+      return;
+    }
+    // return { data };
+  }
+
   async logout() {
     const { error } = await this.authAdapter.signOut();
     if (error) {

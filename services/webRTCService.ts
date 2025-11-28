@@ -1,5 +1,12 @@
 import { Client } from "@/utils/client";
 import Constants from "expo-constants";
+import {
+  mediaDevices,
+  MediaStream,
+  RTCIceCandidate,
+  RTCPeerConnection,
+  RTCSessionDescription,
+} from "react-native-webrtc";
 
 type CallSessionId = string | number;
 type SignalType = "offer" | "answer" | "ice-candidate" | string;
@@ -22,14 +29,14 @@ interface TurnCredentialsCache {
 let turnCredentialsCache: TurnCredentialsCache | null = null;
 
 export class WebRTCService extends Client {
-  pc: RTCPeerConnection | null = null;
+  pc: any = null; // Use any to avoid type conflicts with RN WebRTC
   localStream: MediaStream | null = null;
   remoteStream: MediaStream | null = null;
   isCaller = false;
   currentCallSession: CallSessionId | null = null;
   otherUserId?: string;
-  connectionStateListeners: ((state: RTCPeerConnectionState) => void)[] = [];
-  iceStateListeners: ((state: RTCIceConnectionState) => void)[] = [];
+  connectionStateListeners: ((state: string) => void)[] = [];
+  iceStateListeners: ((state: string) => void)[] = [];
 
   // Get TURN credentials with caching
   private async getTurnCredentials(): Promise<any[]> {
@@ -82,7 +89,7 @@ export class WebRTCService extends Client {
     // Get TURN credentials
     const meteredServers = await this.getTurnCredentials();
 
-    const configuration: RTCConfiguration = {
+    const configuration: any = {
       iceServers: [
         // Google's free STUN servers (always try direct connection first)
         { urls: "stun:stun.l.google.com:19302" },
@@ -98,11 +105,10 @@ export class WebRTCService extends Client {
 
     this.pc = new RTCPeerConnection(configuration);
 
-    // ✅ FIXED: Use addEventListener instead of on* properties
     // Set up ICE candidate handler
-    this.pc.addEventListener("icecandidate", (event: any) => {
+    this.pc.onicecandidate = (event: any) => {
       if (event.candidate) {
-        const candidateInit: RTCIceCandidateInit = {
+        const candidateInit = {
           candidate: event.candidate.candidate,
           sdpMid: event.candidate.sdpMid ?? undefined,
           sdpMLineIndex: event.candidate.sdpMLineIndex ?? undefined,
@@ -111,39 +117,38 @@ export class WebRTCService extends Client {
 
         this.sendSignal("ice-candidate", candidateInit as SignalData);
       }
-    });
+    };
 
-    // Set up track handler
-    this.pc.addEventListener("track", (event: any) => {
-      console.log("Remote track received:", event.track.kind);
-      this.remoteStream = event.streams[0];
-    });
+    // Set up stream handler - RN WebRTC uses onaddstream
+    this.pc.onaddstream = (event: any) => {
+      console.log("Remote stream received");
+      this.remoteStream = event.stream;
+    };
 
     // Monitor connection state
-    this.pc.addEventListener("connectionstatechange", () => {
-      console.log("Connection state:", this.pc?.connectionState);
-      this.notifyConnectionStateChange(this.pc?.connectionState!);
+    this.pc.onconnectionstatechange = () => {
+      const state = this.pc?.connectionState || "unknown";
+      console.log("Connection state:", state);
+      this.notifyConnectionStateChange(state);
 
-      if (this.pc?.connectionState === "connected") {
+      if (state === "connected") {
         this.updateCallStatus("ongoing");
-      } else if (
-        this.pc?.connectionState === "failed" ||
-        this.pc?.connectionState === "disconnected"
-      ) {
+      } else if (state === "failed" || state === "disconnected") {
         this.handleConnectionFailure();
       }
-    });
+    };
 
     // Monitor ICE connection state
-    this.pc.addEventListener("iceconnectionstatechange", () => {
-      console.log("ICE connection state:", this.pc?.iceConnectionState);
-      this.notifyIceStateChange(this.pc?.iceConnectionState!);
-    });
+    this.pc.oniceconnectionstatechange = () => {
+      const state = this.pc?.iceConnectionState || "unknown";
+      console.log("ICE connection state:", state);
+      this.notifyIceStateChange(state);
+    };
 
     // Monitor signaling state
-    this.pc.addEventListener("signalingstatechange", () => {
+    this.pc.onsignalingstatechange = () => {
       console.log("Signaling state:", this.pc?.signalingState);
-    });
+    };
 
     return this.pc;
   }
@@ -151,12 +156,8 @@ export class WebRTCService extends Client {
   // Get local media stream with enhanced options
   async getLocalStream(type: "video" | "audio" = "video") {
     try {
-      const constraints: MediaStreamConstraints = {
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+      const constraints: any = {
+        audio: true,
         video:
           type === "video"
             ? {
@@ -168,13 +169,11 @@ export class WebRTCService extends Client {
             : false,
       };
 
-      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.localStream = await mediaDevices.getUserMedia(constraints);
 
       if (this.pc) {
-        this.localStream.getTracks().forEach((track) => {
-          console.log("Adding local track:", track.kind);
-          this.pc?.addTrack(track, this.localStream as MediaStream);
-        });
+        this.pc.addStream(this.localStream);
+        console.log("Added local stream to peer connection");
       }
 
       return this.localStream;
@@ -186,9 +185,9 @@ export class WebRTCService extends Client {
     }
   }
 
-  // ✅ ADDED: Wait for ICE gathering with timeout
+  // Wait for ICE gathering with timeout
   private waitForIceGathering(timeout: number): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       if (this.pc?.iceGatheringState === "complete") {
         resolve();
         return;
@@ -196,18 +195,18 @@ export class WebRTCService extends Client {
 
       const timeoutId = setTimeout(() => {
         console.warn("ICE gathering timeout, proceeding anyway");
-        resolve(); // Don't reject, just proceed
+        resolve();
       }, timeout);
 
       const checkState = () => {
         if (this.pc?.iceGatheringState === "complete") {
           clearTimeout(timeoutId);
-          this.pc?.removeEventListener("icegatheringstatechange", checkState);
+          this.pc.onicegatheringstatechange = null;
           resolve();
         }
       };
 
-      this.pc?.addEventListener("icegatheringstatechange", checkState);
+      this.pc.onicegatheringstatechange = checkState;
     });
   }
 
@@ -216,7 +215,7 @@ export class WebRTCService extends Client {
     try {
       if (!this.pc) throw new Error("Peer connection not initialized");
 
-      const offerOptions: RTCOfferOptions = {
+      const offerOptions: any = {
         offerToReceiveAudio: true,
         offerToReceiveVideo: true,
       };
@@ -224,7 +223,7 @@ export class WebRTCService extends Client {
       const offer = await this.pc.createOffer(offerOptions);
       await this.pc.setLocalDescription(offer);
 
-      // ✅ ADDED: Wait for ICE gathering to complete (with 10s timeout)
+      // Wait for ICE gathering to complete (with 10s timeout)
       await this.waitForIceGathering(10000);
 
       await this.sendSignal("offer", offer);
@@ -237,7 +236,7 @@ export class WebRTCService extends Client {
   }
 
   // Handle incoming offer
-  async handleOffer(offer: RTCSessionDescriptionInit) {
+  async handleOffer(offer: any) {
     try {
       if (!this.pc) throw new Error("Peer connection not initialized");
 
@@ -258,7 +257,7 @@ export class WebRTCService extends Client {
   }
 
   // Handle incoming answer
-  async handleAnswer(answer: RTCSessionDescriptionInit) {
+  async handleAnswer(answer: any) {
     try {
       if (!this.pc) throw new Error("Peer connection not initialized");
 
@@ -271,7 +270,7 @@ export class WebRTCService extends Client {
   }
 
   // Handle ICE candidate
-  async handleICECandidate(candidate: RTCIceCandidateInit) {
+  async handleICECandidate(candidate: any) {
     try {
       if (!this.pc) {
         console.warn("Peer connection not ready, queuing ICE candidate");
@@ -342,27 +341,18 @@ export class WebRTCService extends Client {
     try {
       if (!this.localStream) throw new Error("No local stream");
 
-      // Remove old video tracks
-      if (type === "audio") {
-        this.localStream.getVideoTracks().forEach((track) => {
-          track.stop();
-          this.localStream?.removeTrack(track);
-        });
+      // Stop current stream
+      this.localStream.getTracks().forEach((track) => {
+        track.stop();
+      });
+
+      // Remove stream from peer connection
+      if (this.pc) {
+        this.pc.removeStream(this.localStream);
       }
 
       // Get new stream with updated type
       const newStream = await this.getLocalStream(type);
-
-      // Update peer connection with new tracks
-      if (this.pc) {
-        const senders = this.pc.getSenders();
-        newStream.getTracks().forEach((track) => {
-          const sender = senders.find((s) => s.track?.kind === track.kind);
-          if (sender) {
-            sender.replaceTrack(track);
-          }
-        });
-      }
 
       await this.supabase
         .from("call_sessions")
@@ -416,27 +406,27 @@ export class WebRTCService extends Client {
   }
 
   // Add connection state listener
-  onConnectionStateChange(callback: (state: RTCPeerConnectionState) => void) {
+  onConnectionStateChange(callback: (state: string) => void) {
     this.connectionStateListeners.push(callback);
   }
 
   // Add ICE state listener
-  onIceStateChange(callback: (state: RTCIceConnectionState) => void) {
+  onIceStateChange(callback: (state: string) => void) {
     this.iceStateListeners.push(callback);
   }
 
   // Notify connection state listeners
-  private notifyConnectionStateChange(state: RTCPeerConnectionState) {
+  private notifyConnectionStateChange(state: string) {
     this.connectionStateListeners.forEach((callback) => callback(state));
   }
 
   // Notify ICE state listeners
-  private notifyIceStateChange(state: RTCIceConnectionState) {
+  private notifyIceStateChange(state: string) {
     this.iceStateListeners.forEach((callback) => callback(state));
   }
 
   // Get connection statistics
-  async getStats(): Promise<RTCStatsReport | null> {
+  async getStats(): Promise<any | null> {
     if (!this.pc) return null;
 
     try {
@@ -458,6 +448,7 @@ export class WebRTCService extends Client {
         track.stop();
         console.log("Stopped track:", track.kind);
       });
+      this.localStream.release();
       this.localStream = null;
     }
 
@@ -468,7 +459,10 @@ export class WebRTCService extends Client {
     }
 
     // Clear remote stream
-    this.remoteStream = null;
+    if (this.remoteStream) {
+      this.remoteStream.release();
+      this.remoteStream = null;
+    }
 
     // Reset state
     this.isCaller = false;
@@ -497,7 +491,7 @@ export class WebRTCService extends Client {
     return this.remoteStream;
   }
 
-  getPeerConnection(): RTCPeerConnection | null {
+  getPeerConnection(): any {
     return this.pc;
   }
 
@@ -506,7 +500,7 @@ export class WebRTCService extends Client {
   }
 }
 
-// ✅ Clear credentials cache on app restart
+// Clear credentials cache on app restart
 export function clearTurnCredentialsCache() {
   turnCredentialsCache = null;
 }

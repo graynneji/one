@@ -25,6 +25,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 interface newPost {
@@ -268,242 +269,246 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ visible, onClose, cat
             presentationStyle="pageSheet"
             onRequestClose={handleClose}
         >
-            <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                {/* Header - Keep original */}
-                <View style={styles.header}>
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={styles.cancelBtn}
-                        onPress={handleClose}
+            <SafeAreaView style={styles.bioModalOverlay} edges={['top', 'left', 'right']}>
+                <View style={styles.container}>
+                    <KeyboardAvoidingView
+                        style={styles.container}
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     >
-                        <Text style={styles.cancelBtnText}>Cancel</Text>
-                    </TouchableOpacity>
+                        {/* Header - Keep original */}
+                        <View style={styles.header}>
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={styles.cancelBtn}
+                                onPress={handleClose}
+                            >
+                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                            </TouchableOpacity>
 
-                    <Text style={styles.headerTitle}>New Post</Text>
+                            <Text style={styles.headerTitle}>New Post</Text>
 
-                    <TouchableOpacity
-                        activeOpacity={1}
-                        style={[
-                            styles.submitBtn,
-                            (!newPost.content.trim() || !newPost.category_id || isSubmitting) &&
-                            styles.submitBtnDisabled
-                        ]}
-                        onPress={handleSubmit}
-                        disabled={!newPost.content.trim() || !newPost.category_id || isSubmitting}
-                    >
-                        <Text style={[
-                            styles.submitBtnText,
-                            (!newPost.content.trim() || !newPost.category_id || isSubmitting) &&
-                            styles.submitBtnTextDisabled
-                        ]}>
-                            {isSubmitting ? 'Posting...' : 'Post'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                    {/* Twitter-style Profile + Input Section */}
-                    <View style={styles.tweetComposer}>
-                        <View style={styles.avatarContainer}>
-                            {session?.user?.user_metadata?.profile_picture ? (
-                                <Image
-                                    source={{ uri: session?.user?.user_metadata?.profile_picture }}
-                                    style={styles.avatar}
-                                />
-                            ) : (
-                                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                                    <Ionicons name="person" size={20} color={colors.primary} />
-                                </View>
-                            )}
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                style={[
+                                    styles.submitBtn,
+                                    (!newPost.content.trim() || !newPost.category_id || isSubmitting) &&
+                                    styles.submitBtnDisabled
+                                ]}
+                                onPress={handleSubmit}
+                                disabled={!newPost.content.trim() || !newPost.category_id || isSubmitting}
+                            >
+                                <Text style={[
+                                    styles.submitBtnText,
+                                    (!newPost.content.trim() || !newPost.category_id || isSubmitting) &&
+                                    styles.submitBtnTextDisabled
+                                ]}>
+                                    {isSubmitting ? 'Posting...' : 'Post'}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
 
-                        <View style={styles.inputWrapper}>
-                            {/* Text Input */}
-                            <TextInput
-                                style={styles.textInput}
-                                placeholder="What's on your mind?"
-                                value={newPost.content}
-                                onChangeText={(content) => setNewPost({ ...newPost, content })}
-                                multiline
-                                maxLength={280}
-                                placeholderTextColor={colors.textSecondary}
-                            />
-
-                            {/* Category Pills - Show if selected */}
-                            {newPost.category_id && (
-                                <View style={styles.tagsContainer}>
-                                    {categories
-                                        .filter(cat => cat.id === newPost.category_id)
-                                        .map(category => (
-                                            <View key={category.id} style={styles.tagPill}>
-                                                <View style={[styles.tagDot, { backgroundColor: category.color }]} />
-                                                <Text style={styles.tagText}>{category.name}</Text>
-                                                <TouchableOpacity
-                                                    onPress={() => setNewPost({ ...newPost, category_id: undefined, tags: '' })}
-                                                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                                                >
-                                                    <Ionicons name="close" size={14} color={colors.textSecondary} />
-                                                </TouchableOpacity>
-                                            </View>
-                                        ))}
-                                </View>
-                            )}
-
-                            {/* Status Pills - Show if active */}
-                            {(newPost.is_anonymous || newPost.is_urgent) && (
-                                <View style={styles.statusPills}>
-                                    {newPost.is_anonymous && (
-                                        <View style={styles.statusPill}>
-                                            <Ionicons name="eye-off" size={12} color="#6b7280" />
-                                            <Text style={styles.statusText}>Anonymous</Text>
-                                        </View>
-                                    )}
-                                    {newPost.is_urgent && (
-                                        <View style={[styles.statusPill, styles.urgentPill]}>
-                                            <Ionicons name="warning" size={12} color="#f59e0b" />
-                                            <Text style={[styles.statusText, styles.urgentText]}>Urgent</Text>
+                        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                            {/* Twitter-style Profile + Input Section */}
+                            <View style={styles.tweetComposer}>
+                                <View style={styles.avatarContainer}>
+                                    {session?.user?.user_metadata?.profile_picture ? (
+                                        <Image
+                                            source={{ uri: session?.user?.user_metadata?.profile_picture }}
+                                            style={styles.avatar}
+                                        />
+                                    ) : (
+                                        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                                            <Ionicons name="person" size={20} color={colors.primary} />
                                         </View>
                                     )}
                                 </View>
-                            )}
 
-                            {/* Image Preview Grid */}
-                            {newPost.image && newPost.image.length > 0 && (
-                                <View style={styles.imageGrid}>
-                                    {newPost.image.map((img, index) => (
-                                        <View key={index} style={styles.imageContainer}>
-                                            <Image source={{ uri: img.uri }} style={styles.imagePreview} />
-                                            <TouchableOpacity
-                                                style={styles.removeImageBtn}
-                                                onPress={() => removeImage(index)}
-                                            >
-                                                <Ionicons name="close-circle" size={20} color="#fff" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    ))}
-                                </View>
-                            )}
-
-                            {/* Toolbar */}
-                            <View style={styles.toolbar}>
-                                <TouchableOpacity
-                                    style={styles.toolbarIcon}
-                                    onPress={pickImage}
-                                    disabled={newPost.image && newPost.image.length >= 4}
-                                >
-                                    <Ionicons
-                                        name="image-outline"
-                                        size={20}
-                                        color={newPost.image && newPost.image.length >= 4 ? colors.textTertiary : colors.primary}
+                                <View style={styles.inputWrapper}>
+                                    {/* Text Input */}
+                                    <TextInput
+                                        style={styles.textInput}
+                                        placeholder="What's on your mind?"
+                                        value={newPost.content}
+                                        onChangeText={(content) => setNewPost({ ...newPost, content })}
+                                        multiline
+                                        maxLength={280}
+                                        placeholderTextColor={colors.textSecondary}
                                     />
-                                </TouchableOpacity>
 
-                                <View style={styles.toolbarRight}>
-                                    <Text style={styles.charCount}>{newPost.content.length}/280</Text>
+                                    {/* Category Pills - Show if selected */}
+                                    {newPost.category_id && (
+                                        <View style={styles.tagsContainer}>
+                                            {categories
+                                                .filter(cat => cat.id === newPost.category_id)
+                                                .map(category => (
+                                                    <View key={category.id} style={styles.tagPill}>
+                                                        <View style={[styles.tagDot, { backgroundColor: category.color }]} />
+                                                        <Text style={styles.tagText}>{category.name}</Text>
+                                                        <TouchableOpacity
+                                                            onPress={() => setNewPost({ ...newPost, category_id: undefined, tags: '' })}
+                                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                                        >
+                                                            <Ionicons name="close" size={14} color={colors.textSecondary} />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ))}
+                                        </View>
+                                    )}
+
+                                    {/* Status Pills - Show if active */}
+                                    {(newPost.is_anonymous || newPost.is_urgent) && (
+                                        <View style={styles.statusPills}>
+                                            {newPost.is_anonymous && (
+                                                <View style={styles.statusPill}>
+                                                    <Ionicons name="eye-off" size={12} color="#6b7280" />
+                                                    <Text style={styles.statusText}>Anonymous</Text>
+                                                </View>
+                                            )}
+                                            {newPost.is_urgent && (
+                                                <View style={[styles.statusPill, styles.urgentPill]}>
+                                                    <Ionicons name="warning" size={12} color="#f59e0b" />
+                                                    <Text style={[styles.statusText, styles.urgentText]}>Urgent</Text>
+                                                </View>
+                                            )}
+                                        </View>
+                                    )}
+
+                                    {/* Image Preview Grid */}
+                                    {newPost.image && newPost.image.length > 0 && (
+                                        <View style={styles.imageGrid}>
+                                            {newPost.image.map((img, index) => (
+                                                <View key={index} style={styles.imageContainer}>
+                                                    <Image source={{ uri: img.uri }} style={styles.imagePreview} />
+                                                    <TouchableOpacity
+                                                        style={styles.removeImageBtn}
+                                                        onPress={() => removeImage(index)}
+                                                    >
+                                                        <Ionicons name="close-circle" size={20} color="#fff" />
+                                                    </TouchableOpacity>
+                                                </View>
+                                            ))}
+                                        </View>
+                                    )}
+
+                                    {/* Toolbar */}
+                                    <View style={styles.toolbar}>
+                                        <TouchableOpacity
+                                            style={styles.toolbarIcon}
+                                            onPress={pickImage}
+                                            disabled={newPost.image && newPost.image.length >= 4}
+                                        >
+                                            <Ionicons
+                                                name="image-outline"
+                                                size={20}
+                                                color={newPost.image && newPost.image.length >= 4 ? colors.textTertiary : colors.primary}
+                                            />
+                                        </TouchableOpacity>
+
+                                        <View style={styles.toolbarRight}>
+                                            <Text style={styles.charCount}>{newPost.content.length}/280</Text>
+                                        </View>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
-                    </View>
 
-                    {/* Category Selection */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>Select Category *</Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.categoriesContainer}
-                        >
-                            {categories.filter(cat => cat.id !== 0).map(category => (
-                                <TouchableOpacity
-                                    key={category.id}
-                                    style={[
-                                        styles.categoryOption,
-                                        newPost.category_id === category.id && styles.categoryOptionSelected
-                                    ]}
-                                    onPress={() => setNewPost({ ...newPost, category_id: category.id, tags: category.name.toLowerCase() })}
+                            {/* Category Selection */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionLabel}>Select Category *</Text>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.categoriesContainer}
                                 >
-                                    <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}>
-                                        <Ionicons name={category.icon} size={16} color="white" />
-                                    </View>
-                                    <Text style={[
-                                        styles.categoryText,
-                                        newPost.category_id === category.id && styles.categoryTextSelected
-                                    ]}>
-                                        {category.name}
-                                    </Text>
-                                    {newPost.category_id === category.id && (
-                                        <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-                                    )}
+                                    {categories.filter(cat => cat.id !== 0).map(category => (
+                                        <TouchableOpacity
+                                            key={category.id}
+                                            style={[
+                                                styles.categoryOption,
+                                                newPost.category_id === category.id && styles.categoryOptionSelected
+                                            ]}
+                                            onPress={() => setNewPost({ ...newPost, category_id: category.id, tags: category.name.toLowerCase() })}
+                                        >
+                                            <View style={[styles.categoryIconContainer, { backgroundColor: category.color }]}>
+                                                <Ionicons name={category.icon} size={16} color="white" />
+                                            </View>
+                                            <Text style={[
+                                                styles.categoryText,
+                                                newPost.category_id === category.id && styles.categoryTextSelected
+                                            ]}>
+                                                {category.name}
+                                            </Text>
+                                            {newPost.category_id === category.id && (
+                                                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+
+                            {/* Post Options */}
+                            <View style={styles.section}>
+                                <Text style={styles.sectionLabel}>Post Options</Text>
+
+                                <View style={styles.optionsContainer}>
+                                    <TouchableOpacity
+                                        activeOpacity={0.7}
+                                        style={styles.optionRow}
+                                        onPress={() => setNewPost({ ...newPost, is_anonymous: !newPost.is_anonymous })}
+                                    >
+                                        <View style={styles.optionLeft}>
+                                            <View style={styles.optionIconCircle}>
+                                                <Ionicons name="eye-off-outline" size={18} color="#6b7280" />
+                                            </View>
+                                            <View style={styles.optionTextContainer}>
+                                                <Text style={styles.optionTitle}>Post Anonymously</Text>
+                                                <Text style={styles.optionDesc}>Hide your identity</Text>
+                                            </View>
+                                        </View>
+                                        <View style={[styles.checkbox, newPost.is_anonymous && styles.checkboxActive]}>
+                                            {newPost.is_anonymous && <Ionicons name="checkmark" size={12} color="white" />}
+                                        </View>
+                                    </TouchableOpacity>
+
+                                    <View style={styles.optionDivider} />
+
+                                    <TouchableOpacity
+                                        activeOpacity={0.7}
+                                        style={styles.optionRow}
+                                        onPress={() => setNewPost({ ...newPost, is_urgent: !newPost.is_urgent })}
+                                    >
+                                        <View style={styles.optionLeft}>
+                                            <View style={styles.optionIconCircle}>
+                                                <Ionicons name="warning-outline" size={18} color="#f59e0b" />
+                                            </View>
+                                            <View style={styles.optionTextContainer}>
+                                                <Text style={styles.optionTitle}>Mark as Urgent</Text>
+                                                <Text style={styles.optionDesc}>Needs immediate support</Text>
+                                            </View>
+                                        </View>
+                                        <View style={[styles.checkbox, newPost.is_urgent && styles.checkboxActive]}>
+                                            {newPost.is_urgent && <Ionicons name="checkmark" size={12} color="white" />}
+                                        </View>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Crisis Resources - Keep original */}
+                            <View style={styles.crisisSection}>
+                                <View style={styles.crisisHeader}>
+                                    <Ionicons name="heart" size={20} color="#ef4444" />
+                                    <Text style={styles.crisisTitle}>Need immediate help?</Text>
+                                </View>
+                                <Text style={styles.crisisText}>
+                                    If you're in crisis, please contact emergency services or a crisis hotline immediately.
+                                </Text>
+                                <TouchableOpacity style={styles.crisisBtn} onPress={emergencyResource}>
+                                    <Text style={styles.crisisBtnText}>View Crisis Resources</Text>
                                 </TouchableOpacity>
-                            ))}
+                            </View>
                         </ScrollView>
-                    </View>
-
-                    {/* Post Options */}
-                    <View style={styles.section}>
-                        <Text style={styles.sectionLabel}>Post Options</Text>
-
-                        <View style={styles.optionsContainer}>
-                            <TouchableOpacity
-                                activeOpacity={0.7}
-                                style={styles.optionRow}
-                                onPress={() => setNewPost({ ...newPost, is_anonymous: !newPost.is_anonymous })}
-                            >
-                                <View style={styles.optionLeft}>
-                                    <View style={styles.optionIconCircle}>
-                                        <Ionicons name="eye-off-outline" size={18} color="#6b7280" />
-                                    </View>
-                                    <View style={styles.optionTextContainer}>
-                                        <Text style={styles.optionTitle}>Post Anonymously</Text>
-                                        <Text style={styles.optionDesc}>Hide your identity</Text>
-                                    </View>
-                                </View>
-                                <View style={[styles.checkbox, newPost.is_anonymous && styles.checkboxActive]}>
-                                    {newPost.is_anonymous && <Ionicons name="checkmark" size={12} color="white" />}
-                                </View>
-                            </TouchableOpacity>
-
-                            <View style={styles.optionDivider} />
-
-                            <TouchableOpacity
-                                activeOpacity={0.7}
-                                style={styles.optionRow}
-                                onPress={() => setNewPost({ ...newPost, is_urgent: !newPost.is_urgent })}
-                            >
-                                <View style={styles.optionLeft}>
-                                    <View style={styles.optionIconCircle}>
-                                        <Ionicons name="warning-outline" size={18} color="#f59e0b" />
-                                    </View>
-                                    <View style={styles.optionTextContainer}>
-                                        <Text style={styles.optionTitle}>Mark as Urgent</Text>
-                                        <Text style={styles.optionDesc}>Needs immediate support</Text>
-                                    </View>
-                                </View>
-                                <View style={[styles.checkbox, newPost.is_urgent && styles.checkboxActive]}>
-                                    {newPost.is_urgent && <Ionicons name="checkmark" size={12} color="white" />}
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Crisis Resources - Keep original */}
-                    <View style={styles.crisisSection}>
-                        <View style={styles.crisisHeader}>
-                            <Ionicons name="heart" size={20} color="#ef4444" />
-                            <Text style={styles.crisisTitle}>Need immediate help?</Text>
-                        </View>
-                        <Text style={styles.crisisText}>
-                            If you're in crisis, please contact emergency services or a crisis hotline immediately.
-                        </Text>
-                        <TouchableOpacity style={styles.crisisBtn} onPress={emergencyResource}>
-                            <Text style={styles.crisisBtnText}>View Crisis Resources</Text>
-                        </TouchableOpacity>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
+                    </KeyboardAvoidingView>
+                </View>
+            </SafeAreaView>
         </Modal>
     );
 };
@@ -512,9 +517,18 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
+        borderWidth: 0.5,
+        borderColor: colors.divider,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    bioModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
     },
     header: {
-        backgroundColor: colors.background,
+        // backgroundColor: colors.background,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

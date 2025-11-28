@@ -26,6 +26,7 @@ export interface PatientNote {
   type: "session" | "observation" | "goal" | "reminder";
   is_private: boolean;
   created_at: string;
+  patient_id: string;
 }
 
 export const NOTE_TYPES = [

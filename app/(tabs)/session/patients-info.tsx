@@ -7,7 +7,7 @@ import { capitalizeFirstLetter, formatDate } from '@/utils';
 import { generatePatientId } from '@/utils/uniqueId';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     Alert,
     RefreshControl,
@@ -32,24 +32,7 @@ const PatientInformationScreen: React.FC = () => {
     const colors = Colors[colorScheme ?? 'light'];
     const styles = createStyles(colors);
 
-    // const { data, isLoading, refetch } = useGetById(
-    //     "patients",
-    //     { id: patientId },
-    //     "id, created_at, name, patient_id, appointment, is_subscribed, patient_notes!patient_id(*)",
-    //     !!patientId,
-    //     {}
-    // );
-
-    // const patient = data?.result[0] as Patients;
-
-
-
-    // const onRefresh = () => {
-    //     setRefreshing(true);
-    //     refetch().finally(() => setRefreshing(false));
-    // };
-
-    const requestEmergencyAccess = () => {
+    const requestEmergencyAccess = useCallback(() => {
         Alert.alert(
             'Emergency Contact Request',
             'This will send a request to platform administrators for emergency contact information. Use only in genuine emergencies.',
@@ -64,7 +47,7 @@ const PatientInformationScreen: React.FC = () => {
                 }
             ]
         );
-    };
+    }, []);
 
     const openChat = () => {
         router.push({
@@ -113,7 +96,7 @@ const PatientInformationScreen: React.FC = () => {
     const daysSinceJoined = Math.floor((new Date().getTime() - new Date(patient.created_at).getTime()) / (1000 * 60 * 60 * 24));
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'bottom', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={28} color={colors.icon} />

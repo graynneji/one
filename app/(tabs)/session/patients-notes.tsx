@@ -2,7 +2,7 @@ import AddNotesModal, { noteFormProps } from '@/components/AddNotesModal';
 import { Colors } from '@/constants/Colors';
 import { Typography } from '@/constants/Typography';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useCrudCreate, useGetById } from '@/hooks/useCrud';
+import { useCrudCreate, useDeleteCrud, useGetById, useUpdateCrud } from '@/hooks/useCrud';
 import { PatientNote, Patients } from '@/types';
 import { capitalizeFirstLetter, formatDate } from '@/utils';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +27,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get('window');
 
 interface NoteForm {
+    id?: string | number | undefined;
     content: string;
     type: PatientNote['type'];
     is_private: boolean;
@@ -131,6 +132,7 @@ const PatientNotesScreen: React.FC = () => {
 
 
     const [noteForm, setNoteForm] = useState<noteFormProps>({
+        id: undefined,
         content: '',
         type: 'session' as PatientNote['type'],
         is_private: false,
@@ -147,27 +149,52 @@ const PatientNotesScreen: React.FC = () => {
         setIsAddNoteModalVisible(true);
     };
     const createUserMutation = useCrudCreate<NoteForm>("patient_notes", [["patient_notes"], ["patients"]]);
+    const deleteNoteMutation = useDeleteCrud("patient_notes", [["patient_notes"], ["patients"]]);
+    const updateUserMutation = useUpdateCrud<NoteForm>("patient_notes", [["patient_notes"], ["patients"]]);
 
     // const saveNote = () => {
-    //     setIsSaving(true)
+    //     setIsSaving(true);
+
     //     if (!noteForm.content.trim()) {
     //         Alert.alert('Error', 'Please enter note content');
+    //         setIsSaving(false);
     //         return;
     //     }
 
-    //     if (!patient.id) return;
+    //     if (!patient?.id) {
+    //         setIsSaving(false);
+    //         return;
+    //     }
 
     //     const newNote: NoteForm = {
-    //         patient_id: patient?.id,
+    //         patient_id: patient.id,
     //         content: noteForm.content.trim(),
     //         type: noteForm.type,
     //         is_private: noteForm.is_private,
     //     };
-    //     createUserMutation.mutate(noteForm);
-    //     setIsAddNoteModalVisible(false);
-    //     setIsSaving(false)
-    // }
-    const saveNote = async () => {
+
+    //     createUserMutation.mutate(newNote, {
+    //         onSuccess: async () => {
+    //             // await refetch(); // ✅ Refresh notes after creation
+    //             setIsAddNoteModalVisible(false);
+    //             setNoteForm({
+    //                 content: '',
+    //                 type: 'session',
+    //                 is_private: false,
+    //                 patient_id: patient.id,
+    //             });
+    //             setIsSaving(false);
+    //         },
+    //         onError: (error) => {
+    //             console.error('Error creating note:', error);
+    //             Alert.alert('Error', 'Failed to save note. Try again.');
+    //             setIsSaving(false);
+    //         },
+    //     });
+    // };
+
+
+    const saveNote = () => {
         setIsSaving(true);
 
         if (!noteForm.content.trim()) {
@@ -181,33 +208,96 @@ const PatientNotesScreen: React.FC = () => {
             return;
         }
 
-        const newNote: NoteForm = {
+        const noteData: NoteForm = {
             patient_id: patient.id,
             content: noteForm.content.trim(),
             type: noteForm.type,
             is_private: noteForm.is_private,
         };
 
-        createUserMutation.mutate(newNote, {
-            onSuccess: async () => {
-                // await refetch(); // ✅ Refresh notes after creation
-                setIsAddNoteModalVisible(false);
-                setNoteForm({
-                    content: '',
-                    type: 'session',
-                    is_private: false,
-                    patient_id: patient.id,
-                });
-                setIsSaving(false);
-            },
-            onError: (error) => {
-                console.error('Error creating note:', error);
-                Alert.alert('Error', 'Failed to save note. Try again.');
-                setIsSaving(false);
-            },
-        });
+        // Check if we're editing (noteForm has an id) or creating new
+        if (noteForm?.id) {
+            // Update existing note
+            updateUserMutation.mutate(
+                {
+                    payload: noteData,
+                    column: 'id',
+                    id: noteForm.id
+                },
+                {
+                    onSuccess: () => {
+                        setIsAddNoteModalVisible(false);
+                        setNoteForm({
+                            content: '',
+                            type: 'session',
+                            is_private: false,
+                            patient_id: patient.id,
+                        });
+                        setIsSaving(false);
+                    },
+                    onError: (error) => {
+                        console.error('Error updating note:', error);
+                        Alert.alert('Error', 'Failed to update note. Try again.');
+                        setIsSaving(false);
+                    },
+                }
+            );
+        } else {
+            // Create new note
+            createUserMutation.mutate(noteData, {
+                onSuccess: () => {
+                    setIsAddNoteModalVisible(false);
+                    setNoteForm({
+                        content: '',
+                        type: 'session',
+                        is_private: false,
+                        patient_id: patient.id,
+                    });
+                    setIsSaving(false);
+                },
+                onError: (error) => {
+                    // console.error('Error creating note:', error);
+                    // Alert.alert('Error', 'Failed to save note. Try again.');
+                    setIsSaving(false);
+                },
+            });
+        }
     };
 
+    const DeleteNote = (noteId: string | number) => {
+        console.log(noteId);
+        if (!noteId) return;
+
+        Alert.alert(
+            'Delete Note',
+            'Are you sure you would like to delete this note?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Yes',
+                    onPress: () => {
+                        deleteNoteMutation.mutate(noteId as number);
+                    },
+                },
+            ]
+        );
+    };
+
+    const editNotes = (note: PatientNote) => {
+        if (!note) return;
+
+        // Set the form with the note data including the id
+        setNoteForm({
+            id: note.id, // Include the id to track we're editing
+            content: note.content,
+            type: note.type,
+            is_private: note.is_private,
+            patient_id: note.patient_id,
+        });
+
+        // Open the modal - saveNote will handle the update
+        setIsAddNoteModalVisible(true);
+    };
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             {/* Floating Header with Blur */}
@@ -406,10 +496,10 @@ const PatientNotesScreen: React.FC = () => {
                                             </Text>
                                         </View>
                                         <View style={styles.noteActions}>
-                                            <TouchableOpacity style={styles.noteActionButton} activeOpacity={0.7}>
+                                            <TouchableOpacity style={styles.noteActionButton} activeOpacity={0.7} onPress={() => editNotes(note)}>
                                                 <Ionicons name="create-outline" size={20} color={colors.text} />
                                             </TouchableOpacity>
-                                            <TouchableOpacity style={styles.noteActionButton} activeOpacity={0.7}>
+                                            <TouchableOpacity style={styles.noteActionButton} activeOpacity={0.7} onPress={() => DeleteNote(note?.id)}>
                                                 <Ionicons name="trash-outline" size={20} color="#EF4444" />
                                             </TouchableOpacity>
                                         </View>

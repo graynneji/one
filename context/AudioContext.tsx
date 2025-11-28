@@ -1,7 +1,7 @@
 import { AudioPlayer, createAudioPlayer } from 'expo-audio';
 import React, { createContext, ReactNode, useContext, useEffect, useRef } from 'react';
 
-const messageSound = require('@/assets/sounds/740421__anthonyrox__message-notification-2.wav');
+const messageSound = require('@/assets/sounds/message.wav');
 
 interface AudioContextType {
     playMessageSound: () => Promise<void>;

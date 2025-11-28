@@ -3,6 +3,11 @@
   "compilerOptions": {
     "jsx": "react",
     "strict": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
+    ],
+    "skipLibCheck": true,
     "paths": {
       "@/*": [
         "./*"
@@ -12,7 +17,9 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "**/*.jsx"
+    "react-native-webrtc.d.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
